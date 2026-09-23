@@ -1,7 +1,9 @@
 // =============================================================
 // App-wide constants
 // =============================================================
+import pkg from '../../package.json';
 
+export const APP_VERSION = pkg.version || '1.0.0';
 export const COACH_NAME = 'Michael Carter';
 export const COACH_TITLE = 'Business Growth Coach';
 export const COACH_PRACTICE = 'Executive Practice';

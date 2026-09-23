@@ -4,6 +4,7 @@ import { Lock } from 'lucide-react';
 import LoginForm from '../features/auth/components/LoginForm';
 import { useAuth } from '../features/auth/hooks/useAuth';
 import { isSupabaseConfigured } from '../config/env';
+import { APP_VERSION } from '../lib/constants';
 
 export default function Login() {
   const { signIn, isAuthenticated } = useAuth();
@@ -69,7 +70,7 @@ export default function Login() {
       </div>
 
       <p className="mt-8 text-xs text-text-secondary tracking-widest uppercase">
-        Authenticated Advisory Workspace · Ver. 1.0
+        Authenticated Advisory Workspace · Ver. {APP_VERSION}
       </p>
     </div>
   );

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { cn } from '../../lib/utils';
+import { APP_VERSION } from '../../lib/constants';
 
 const navItems = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -98,7 +99,7 @@ export default function Sidebar() {
 
         {/* Version text */}
         <div className="px-3 text-[11px] text-[#555C66]">
-          <p>Business Coach CRM <span className="text-[10px] text-[#434851]">v1.0.0</span></p>
+          <p>Business Coach CRM <span className="text-[10px] text-[#434851]">v{APP_VERSION}</span></p>
         </div>
       </div>
     </nav>
