@@ -24,6 +24,8 @@ export const LEAD_STATUS_LABELS = {
   [LEAD_STATUS.NO_RESPONSE]: 'No Response',
 };
 
+export const ALL_STATUSES = Object.values(LEAD_STATUS);
+
 // Follow-up statuses
 export const FOLLOWUP_STATUS = {
   PENDING: 'PENDING',

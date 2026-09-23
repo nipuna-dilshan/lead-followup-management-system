@@ -10,6 +10,10 @@ function requireSupabase() {
 
 function normalizeLead(lead) {
   if (!lead) return lead;
+  const consultation =
+    lead.consultations && lead.consultations.length > 0
+      ? [...lead.consultations].sort((a, b) => new Date(b.created_at || b.start_time) - new Date(a.created_at || a.start_time))[0]
+      : null;
   return {
     ...lead,
     full_name: lead.full_name || lead.name || 'Unnamed Client',
@@ -18,6 +22,7 @@ function normalizeLead(lead) {
     challenge: lead.challenge || lead.main_challenge || '',
     main_goal: lead.main_goal || lead.goal || '',
     goal: lead.goal || lead.main_goal || '',
+    consultation,
   };
 }
 
@@ -29,7 +34,17 @@ export async function fetchLeads({ page = 1, pageSize = DEFAULT_PAGE_SIZE, searc
 
   let query = supabase
     .from('leads')
-    .select('*', { count: 'exact' })
+    .select(`
+      *,
+      consultations (
+        id,
+        start_time,
+        end_time,
+        meeting_url,
+        status,
+        created_at
+      )
+    `, { count: 'exact' })
     .order('created_at', { ascending: false });
 
   if (status && status !== 'ALL') {
@@ -81,9 +96,9 @@ export async function fetchLeadById(id) {
   if (leadError) throw leadError;
 
   const [followupsResult, emailsResult, consultationsResult] = await Promise.all([
-    supabase.from('lead_followups').select('*').eq('lead_id', id).order('stage', { ascending: true }).catch(() => ({ data: [] })),
-    supabase.from('email_events').select('*').eq('lead_id', id).order('created_at', { ascending: true }).catch(() => ({ data: [] })),
-    supabase.from('consultations').select('*').eq('lead_id', id).order('created_at', { ascending: false }).limit(1).catch(() => ({ data: [] })),
+    supabase.from('lead_followups').select('*').eq('lead_id', id).order('stage', { ascending: true }),
+    supabase.from('email_events').select('*').eq('lead_id', id).order('created_at', { ascending: true }),
+    supabase.from('consultations').select('*').eq('lead_id', id).order('created_at', { ascending: false }).limit(1),
   ]);
 
   return {
@@ -168,7 +183,17 @@ export async function fetchRecentLeads(limit = 5) {
 
   const { data, error } = await supabase
     .from('leads')
-    .select('*')
+    .select(`
+      *,
+      consultations (
+        id,
+        start_time,
+        end_time,
+        meeting_url,
+        status,
+        created_at
+      )
+    `)
     .order('created_at', { ascending: false })
     .limit(limit);
 

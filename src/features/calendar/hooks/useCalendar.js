@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchConsultations, fetchUpcomingConsultations } from '../services/calendarService';
+import { fetchConsultations, fetchUpcomingConsultations, createConsultation } from '../services/calendarService';
 import { isSupabaseConfigured } from '../../../config/env';
 
 export function useCalendar() {
@@ -24,9 +24,15 @@ export function useCalendar() {
     }
   }
 
+  async function scheduleConsultation(payload) {
+    const created = await createConsultation(payload);
+    setConsultations((prev) => [...prev, created]);
+    return created;
+  }
+
   useEffect(() => { load(); }, []);
 
-  return { consultations, loading, error, refresh: load };
+  return { consultations, loading, error, refresh: load, scheduleConsultation };
 }
 
 export function useUpcomingConsultations(limit = 5) {

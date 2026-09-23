@@ -1,130 +1,106 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
-  LayoutGrid,
-  IdCard,
+  LayoutDashboard,
+  Users,
   Calendar,
-  Mail,
   Settings,
-  CircleUser,
+  Target,
   LogOut,
-  Plus,
 } from 'lucide-react';
-import { cn } from '../../lib/utils';
 import { useAuth } from '../../features/auth/hooks/useAuth';
+import { cn } from '../../lib/utils';
 
 const navItems = [
-  { to: '/admin', label: 'Dashboard', icon: LayoutGrid, end: true },
-  { to: '/admin/leads', label: 'Leads', icon: IdCard },
+  { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/admin/leads', label: 'Leads', icon: Users },
   { to: '/admin/calendar', label: 'Calendar', icon: Calendar },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
-function NavItem({ to, label, icon: Icon, end }) {
-  return (
-    <NavLink
-      to={to}
-      end={end}
-      className={({ isActive }) =>
-        cn(
-          'flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-[14px] transition-colors group',
-          isActive
-            ? 'bg-[#EFE8E1] text-[#8C432D] font-semibold'
-            : 'text-[#332E2A] hover:bg-[#F6F2EC] hover:text-[#1C1917] font-medium'
-        )
-      }
-    >
-      {({ isActive }) => (
-        <>
-          <Icon
-            className={cn(
-              'h-[19px] w-[19px] shrink-0 transition-colors',
-              isActive
-                ? 'text-[#8C432D]'
-                : 'text-[#4A4541] group-hover:text-[#1C1917]'
-            )}
-          />
-          <span>{label}</span>
-        </>
-      )}
-    </NavLink>
-  );
-}
-
 export default function Sidebar() {
-  const navigate = useNavigate();
   const { signOut } = useAuth();
+  const navigate = useNavigate();
 
-  async function handleSignOut() {
-    await signOut();
-    navigate('/login');
-  }
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate('/login');
+    } catch (err) {
+      console.error('Failed to sign out:', err);
+    }
+  };
 
   return (
-    <nav className="flex flex-col h-full bg-white border-r border-[#ECE6DE] px-4 py-5 select-none">
-      {/* Top Workspace Identity */}
-      <div className="flex items-center gap-3 px-1 mb-5">
-        <div className="h-10 w-10 rounded-xl bg-[#FAF5F0] border border-[#EDE5DA] text-[#8C432D] font-bold text-xs flex items-center justify-center shrink-0 tracking-wider shadow-xs select-none">
-          EA
-        </div>
-        <div className="min-w-0">
-          <h2 className="text-[15px] font-bold text-[#1C1917] tracking-tight leading-snug truncate">
-            Executive Advisory
-          </h2>
-          <p className="text-[12.5px] font-normal text-[#78716C] leading-none truncate mt-0.5">
-            Executive Practice
-          </p>
-        </div>
-      </div>
-
-      {/* Add Enquiry Action Button */}
-      <button
-        onClick={() => navigate('/admin/leads?add=true')}
-        className="w-full flex items-center justify-center gap-2 bg-[#8C432D] hover:bg-[#793926] active:bg-[#683020] text-white font-medium text-[13.5px] h-10 rounded-xl transition-all shadow-sm mb-5 cursor-pointer"
-      >
-        <Plus className="h-4 w-4 stroke-[2.5]" />
-        <span>Add Enquiry</span>
-      </button>
-
-      {/* Main Navigation */}
-      <div className="flex-1 space-y-1">
-        {navItems.map((item) => (
-          <NavItem key={item.to} {...item} />
+    <nav className="flex flex-col h-full bg-[#111315] border-r border-[#1F2226] px-4 py-5 select-none w-full">
+      {/* Navigation List */}
+      <div className="space-y-1.5 pt-1">
+        {navItems.map((item, idx) => (
+          <NavLink
+            key={idx}
+            to={item.to}
+            end={item.end}
+            className={({ isActive }) =>
+              cn(
+                'flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group',
+                isActive
+                  ? 'bg-[#1C1715] border border-[#BD6B52] text-[#BD6B52] font-semibold'
+                  : 'text-[#9A9791] hover:bg-[#181A1D] hover:text-white border border-transparent'
+              )
+            }
+          >
+            {({ isActive }) => {
+              const Icon = item.icon;
+              return (
+                <>
+                  <Icon
+                    className={cn(
+                      'h-4 w-4 shrink-0 transition-colors',
+                      isActive ? 'text-[#BD6B52]' : 'text-[#9A9791] group-hover:text-white'
+                    )}
+                  />
+                  <span>{item.label}</span>
+                </>
+              );
+            }}
+          </NavLink>
         ))}
       </div>
 
-      {/* Bottom Profile & Sign Out Card */}
-      <div className="mt-auto pt-4">
-        <div className="bg-[#FAF6F0] rounded-xl p-3 border border-[#ECE5DA]">
-          <div className="flex items-center gap-2.5 mb-2.5">
-            <img
-              src="/michael-carter.png"
-              alt="Michael Carter"
-              className="h-8 w-8 rounded-full object-cover shrink-0 ring-1 ring-black/5"
-            />
-            <div className="min-w-0">
-              <p className="text-[13px] font-bold text-[#1C1917] leading-tight truncate">Michael Carter</p>
-              <p className="text-[11.5px] text-[#78716C] leading-none truncate mt-0.5">Growth Coach</p>
+      {/* Bottom Section */}
+      <div className="mt-auto pt-4 space-y-3">
+        {/* Automation Card */}
+        <div className="bg-[#181A1D] border border-[#2A2D30] rounded-card p-4">
+          <div className="flex items-start gap-3">
+            <Target className="h-5 w-5 text-[#BD6B52] shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-semibold text-white leading-snug">
+                Automate. Follow up.<br />Grow.
+              </p>
+              <p className="text-[11px] text-[#9A9791] mt-1.5 leading-tight">
+                More conversations.<br />More clients.
+              </p>
             </div>
           </div>
-          <div className="flex items-center justify-between border-t border-[#ECE5DA] pt-2 text-[12.5px] font-medium text-[#443E3A]">
-            <NavLink
-              to="/admin/settings"
-              className="flex items-center gap-1.5 hover:text-[#1C1917] transition-colors"
-            >
-              <CircleUser className="h-4 w-4" />
-              <span>Profile</span>
-            </NavLink>
-            <button
-              onClick={handleSignOut}
-              className="flex items-center gap-1.5 hover:text-[#A34A3B] transition-colors cursor-pointer"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Sign Out</span>
-            </button>
-          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-[#1F2226]" />
+
+        {/* Sign Out Button */}
+        <button
+          onClick={handleSignOut}
+          type="button"
+          className="flex items-center gap-3.5 w-full px-3.5 py-2.5 text-sm font-medium text-[#9A9791] hover:text-white hover:bg-[#181A1D] rounded-xl transition-all cursor-pointer group"
+        >
+          <LogOut className="h-4 w-4 text-[#9A9791] group-hover:text-white transition-colors" />
+          <span>Sign Out</span>
+        </button>
+
+        {/* Version text */}
+        <div className="px-3 text-[11px] text-[#555C66]">
+          <p>Business Coach CRM <span className="text-[10px] text-[#434851]">v1.0.0</span></p>
         </div>
       </div>
     </nav>
   );
 }
-

@@ -7,23 +7,26 @@ export default function AdminLayout({ children }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-64 shrink-0">
-        <Sidebar />
-      </aside>
+    <div className="flex flex-col h-screen bg-background overflow-hidden antialiased font-sans text-text-primary">
+      {/* Top Header spans across full width */}
+      <Topbar onMenuClick={() => setMobileNavOpen(true)} />
 
-      {/* Mobile overlay navigation */}
-      <MobileNavigation
-        isOpen={mobileNavOpen}
-        onClose={() => setMobileNavOpen(false)}
-      />
+      {/* Main body: Sidebar on left + Content on right */}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        {/* Desktop Sidebar (280px) */}
+        <aside className="hidden lg:flex lg:flex-col lg:w-[280px] shrink-0">
+          <Sidebar />
+        </aside>
 
-      {/* Main content */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <Topbar onMenuClick={() => setMobileNavOpen(true)} />
-        <main className="flex-1 overflow-y-auto">
-          <div className="p-4 sm:p-6 lg:p-8 max-w-screen-xl mx-auto">
+        {/* Mobile overlay navigation */}
+        <MobileNavigation
+          isOpen={mobileNavOpen}
+          onClose={() => setMobileNavOpen(false)}
+        />
+
+        {/* Main scrollable content */}
+        <main className="flex-1 overflow-y-auto bg-background">
+          <div className="p-4 sm:p-6 lg:p-8 max-w-[1500px] mx-auto">
             {children}
           </div>
         </main>

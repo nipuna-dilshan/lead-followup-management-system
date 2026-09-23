@@ -19,6 +19,7 @@ export async function fetchConsultations() {
       leads (
         id,
         full_name,
+        name,
         business_type,
         email,
         phone
@@ -27,7 +28,15 @@ export async function fetchConsultations() {
     .order('start_time', { ascending: true });
 
   if (error) throw error;
-  return data || [];
+  return (data || []).map((c) => ({
+    ...c,
+    leads: c.leads
+      ? {
+          ...c.leads,
+          full_name: c.leads.full_name || c.leads.name || 'Client',
+        }
+      : null,
+  }));
 }
 
 /**
@@ -40,7 +49,7 @@ export async function fetchUpcomingConsultations(limit = 5) {
     .from('consultations')
     .select(`
       *,
-      leads (id, full_name, business_type, email)
+      leads (id, full_name, name, business_type, email)
     `)
     .eq('status', CONSULTATION_STATUS.CONFIRMED)
     .gte('start_time', new Date().toISOString())
@@ -48,5 +57,64 @@ export async function fetchUpcomingConsultations(limit = 5) {
     .limit(limit);
 
   if (error) throw error;
-  return data || [];
+  return (data || []).map((c) => ({
+    ...c,
+    leads: c.leads
+      ? {
+          ...c.leads,
+          full_name: c.leads.full_name || c.leads.name || 'Client',
+        }
+      : null,
+  }));
+}
+
+/**
+ * Create a new scheduled consultation.
+ */
+export async function createConsultation({ lead_id, start_time, end_time, meeting_url }) {
+  requireSupabase();
+
+  const { data, error } = await supabase
+    .from('consultations')
+    .insert([
+      {
+        lead_id,
+        start_time,
+        end_time: end_time || new Date(new Date(start_time).getTime() + 45 * 60000).toISOString(),
+        meeting_url: meeting_url || 'https://meet.google.com/coaching-session',
+        status: 'CONFIRMED',
+      },
+    ])
+    .select(`
+      *,
+      leads (
+        id,
+        full_name,
+        name,
+        business_type,
+        email,
+        phone
+      )
+    `)
+    .single();
+
+  if (error) throw error;
+
+  // Also update lead status to BOOKED
+  if (lead_id) {
+    await supabase
+      .from('leads')
+      .update({ status: 'BOOKED', booked_at: new Date().toISOString() })
+      .eq('id', lead_id);
+  }
+
+  return {
+    ...data,
+    leads: data.leads
+      ? {
+          ...data.leads,
+          full_name: data.leads.full_name || data.leads.name || 'Client',
+        }
+      : null,
+  };
 }

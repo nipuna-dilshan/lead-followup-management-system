@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import AdminLayout from '../components/layout/AdminLayout';
@@ -41,7 +41,7 @@ export default function Leads() {
   function handleSearchChange(value) {
     setSearch(value);
     clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => setDebouncedSearch(value), 400);
+    debounceRef.current = setTimeout(() => setDebouncedSearch(value), 350);
   }
 
   const { leads, total, totalPages, page, goToPage, loading, error, refresh } = useLeads({
@@ -71,67 +71,91 @@ export default function Leads() {
 
   return (
     <AdminLayout>
-      <PageHeader
-        title="Leads"
-        description="Manage enquiries, follow-ups, and consultation bookings."
-        actions={
-          <Button onClick={() => setAddModalOpen(true)} size="sm">
-            <Plus className="h-4 w-4" />
-            Add Lead
-          </Button>
-        }
-      />
-
-      {/* Filters */}
-      <div className="mb-4">
-        <LeadFilters
-          search={search}
-          onSearchChange={handleSearchChange}
-          status={status}
-          onStatusChange={setStatus}
-          businessType={businessType}
-          onBusinessTypeChange={setBusinessType}
-        />
-      </div>
-
-      {/* Table */}
-      <LeadTable
-        leads={leads}
-        loading={loading}
-        error={error}
-        total={total}
-        page={page}
-        totalPages={totalPages}
-        onPageChange={goToPage}
-        onRetry={refresh}
-      />
-
-      {/* Add Lead Modal */}
-      <Modal
-        isOpen={addModalOpen}
-        onClose={() => { setAddModalOpen(false); setAddError(''); }}
-        title="New Inquiry"
-        description="Capture client context and schedule advisory intake."
-        size="lg"
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => { setAddModalOpen(false); setAddError(''); }} disabled={addLoading}>
-              Cancel
-            </Button>
+      <div className="space-y-6">
+        <PageHeader
+          title="Leads"
+          description="Manage enquiries, follow-ups, and consultation bookings."
+          actions={
             <Button
-              loading={addLoading}
-              onClick={() => {
-                // Trigger form submit via custom event
-                formRef.current?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-              }}
+              onClick={() => setAddModalOpen(true)}
+              variant="primary"
+              size="md"
+              className="gap-1.5"
             >
-              Save Inquiry
+              <Plus className="h-4 w-4 stroke-[2.5]" />
+              <span>Add Lead</span>
             </Button>
-          </>
-        }
-      >
-        <LeadForm ref={formRef} onSubmit={handleAddLead} loading={addLoading} serverError={addError} />
-      </Modal>
+          }
+        />
+
+        {/* Filters Card */}
+        <div className="bg-surface rounded-card border border-border shadow-card p-4">
+          <LeadFilters
+            search={search}
+            onSearchChange={handleSearchChange}
+            status={status}
+            onStatusChange={setStatus}
+            businessType={businessType}
+            onBusinessTypeChange={setBusinessType}
+          />
+        </div>
+
+        {/* Table */}
+        <LeadTable
+          leads={leads}
+          loading={loading}
+          error={error}
+          total={total}
+          page={page}
+          totalPages={totalPages}
+          onPageChange={goToPage}
+          onRetry={refresh}
+        />
+
+        {/* Add Lead Modal */}
+        <Modal
+          isOpen={addModalOpen}
+          onClose={() => {
+            setAddModalOpen(false);
+            setAddError('');
+          }}
+          title="Add New Lead"
+          description="Capture client context and schedule advisory intake."
+          size="lg"
+          footer={
+            <>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setAddModalOpen(false);
+                  setAddError('');
+                }}
+                disabled={addLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                loading={addLoading}
+                onClick={() => {
+                  formRef.current?.dispatchEvent(
+                    new Event('submit', { cancelable: true, bubbles: true })
+                  );
+                }}
+              >
+                Save Lead
+              </Button>
+            </>
+          }
+        >
+          <LeadForm
+            ref={formRef}
+            onSubmit={handleAddLead}
+            loading={addLoading}
+            serverError={addError}
+          />
+        </Modal>
+      </div>
     </AdminLayout>
   );
 }

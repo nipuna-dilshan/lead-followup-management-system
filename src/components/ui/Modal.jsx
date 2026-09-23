@@ -50,14 +50,14 @@ export default function Modal({
     <div
       ref={overlayRef}
       onClick={handleOverlayClick}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#111315]/60"
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? 'modal-title' : undefined}
     >
       <div
         className={cn(
-          'relative w-full bg-surface rounded-card shadow-modal max-h-[90vh] flex flex-col',
+          'relative w-full bg-surface rounded-card border border-border shadow-modal max-h-[90vh] flex flex-col',
           sizes[size],
           className
         )}

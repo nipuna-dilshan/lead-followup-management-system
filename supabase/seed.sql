@@ -4,19 +4,29 @@
 -- Run AFTER 001_initial_schema.sql and 002_rls_policies.sql
 -- =============================================================
 
+-- Make legacy columns nullable if they still have NOT NULL constraints
+ALTER TABLE leads ALTER COLUMN name DROP NOT NULL;
+ALTER TABLE leads ALTER COLUMN challenge DROP NOT NULL;
+ALTER TABLE leads ALTER COLUMN goal DROP NOT NULL;
+
 -- =============================================================
 -- LEADS — Realistic fictional enquiries
 -- =============================================================
-INSERT INTO leads (id, full_name, email, phone, business_type, main_challenge, business_age, main_goal, urgency, status, follow_up_stage, created_at)
+INSERT INTO leads (
+  id, name, full_name, email, phone, business_type, challenge, main_challenge, business_age, goal, main_goal, urgency, status, follow_up_stage, created_at
+)
 VALUES
   (
     'a1b2c3d4-0001-0001-0001-000000000001',
+    'Nimal Perera',
     'Nimal Perera',
     'nimal@pereracoaching.example.com',
     '+1 (555) 382-9104',
     'Coaching',
     'Inconsistent client enquiries and reliance on unpredictable organic social posts. Need structured acquisition.',
+    'Inconsistent client enquiries and reliance on unpredictable organic social posts. Need structured acquisition.',
     '1–3 years',
+    'Build a predictable high-ticket client acquisition process targeting $35k MRR.',
     'Build a predictable high-ticket client acquisition process targeting $35k MRR.',
     'Within the next month',
     'CONTACTED',
@@ -26,11 +36,14 @@ VALUES
   (
     'a1b2c3d4-0002-0002-0002-000000000002',
     'Sarah Jenkins',
+    'Sarah Jenkins',
     'sarah@jenkinspartners.example.com',
     '+44 7700 900234',
     'Professional Services',
     'Need high-ticket corporate packaging and structured consulting delivery framework.',
+    'Need high-ticket corporate packaging and structured consulting delivery framework.',
     '3–5 years',
+    'Package and sell a premium retainer programme at £15k per quarter.',
     'Package and sell a premium retainer programme at £15k per quarter.',
     'As soon as possible',
     'BOOKED',
@@ -40,11 +53,14 @@ VALUES
   (
     'a1b2c3d4-0003-0003-0003-000000000003',
     'Marcus Thorne',
+    'Marcus Thorne',
     'marcus@thorneadvisory.example.com',
     NULL,
     'Consulting',
     'Outbound pipeline growth is stagnant. Conversion from leads to paid engagements is below 15%.',
+    'Outbound pipeline growth is stagnant. Conversion from leads to paid engagements is below 15%.',
     '5+ years',
+    'Systematize outbound and improve close rate to 30%+ within 90 days.',
     'Systematize outbound and improve close rate to 30%+ within 90 days.',
     'Just exploring',
     'NEW',
@@ -54,11 +70,14 @@ VALUES
   (
     'a1b2c3d4-0004-0004-0004-000000000004',
     'Elena Rostova',
+    'Elena Rostova',
     'elena@vanguardcreative.example.com',
     '+1 (555) 201-7788',
     'Agency',
     'Scaling retainer contracts without diluting service quality or burning out the team.',
+    'Scaling retainer contracts without diluting service quality or burning out the team.',
     '3–5 years',
+    'Grow from 8 to 20 retainer clients while maintaining premium positioning.',
     'Grow from 8 to 20 retainer clients while maintaining premium positioning.',
     'Within the next month',
     'CONTACTED',
@@ -68,11 +87,14 @@ VALUES
   (
     'a1b2c3d4-0005-0005-0005-000000000005',
     'David Chen',
+    'David Chen',
     'david@chenventures.example.com',
     '+65 9123 4567',
     'E-commerce',
     'Scaling D2C brand from $500k to $2M revenue — struggling with attribution and retention.',
+    'Scaling D2C brand from $500k to $2M revenue — struggling with attribution and retention.',
     '1–3 years',
+    'Hit $2M ARR and establish a repeatable paid acquisition engine.',
     'Hit $2M ARR and establish a repeatable paid acquisition engine.',
     'As soon as possible',
     'NO_RESPONSE',
@@ -82,17 +104,21 @@ VALUES
   (
     'a1b2c3d4-0006-0006-0006-000000000006',
     'Maya Patel',
+    'Maya Patel',
     'maya@archstudio.example.com',
     '+44 7900 112233',
     'Agency',
     'Scaling without diluting boutique reputation. Current growth trajectory risks commoditising the brand.',
+    'Scaling without diluting boutique reputation. Current growth trajectory risks commoditising the brand.',
     'Less than 1 year',
+    'Grow revenue by 150% while maintaining ultra-premium positioning.',
     'Grow revenue by 150% while maintaining ultra-premium positioning.',
     'Just exploring',
     'NEW',
     0,
     NOW() - INTERVAL '2 hours'
-  );
+  )
+ON CONFLICT (id) DO NOTHING;
 
 -- =============================================================
 -- LEAD FOLLOWUPS
@@ -156,4 +182,5 @@ VALUES
     NOW() + INTERVAL '6 days' + INTERVAL '10 hours 45 minutes',
     'https://meet.google.com/xyz-uvwx-yzz',
     'CONFIRMED'
-  );
+  )
+ON CONFLICT (id) DO NOTHING;

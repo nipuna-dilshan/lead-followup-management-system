@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS profiles (
   email         TEXT,
   phone         TEXT,
   avatar_url    TEXT,
+  title         TEXT,
+  bio           TEXT,
   booking_url   TEXT DEFAULT 'https://cal.com/nipun-dilshan-p5amnb/business-growth-consultation',
   notification_email    BOOLEAN NOT NULL DEFAULT TRUE,
   notification_followup BOOLEAN NOT NULL DEFAULT TRUE,
@@ -58,6 +60,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS leads_updated_at ON leads;
 CREATE TRIGGER leads_updated_at
   BEFORE UPDATE ON leads
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
@@ -115,6 +118,7 @@ CREATE TABLE IF NOT EXISTS consultations (
 CREATE INDEX IF NOT EXISTS consultations_start_time_idx ON consultations(start_time);
 CREATE INDEX IF NOT EXISTS consultations_lead_id_idx ON consultations(lead_id);
 
+DROP TRIGGER IF EXISTS consultations_updated_at ON consultations;
 CREATE TRIGGER consultations_updated_at
   BEFORE UPDATE ON consultations
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();

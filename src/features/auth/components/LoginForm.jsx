@@ -67,9 +67,9 @@ export default function LoginForm({ onSubmit, loading, serverError }) {
             disabled={loading}
             aria-invalid={!!errors.password}
             aria-describedby={errors.password ? 'login-password-error' : undefined}
-            className={`w-full h-10 px-3 pr-10 text-sm rounded-input border bg-surface text-text-primary
+            className={`w-full h-[42px] px-3.5 pr-10 text-sm rounded-btn border bg-surface text-text-primary
               placeholder:text-text-secondary/60 transition-base
-              focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent
+              focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent
               disabled:opacity-50 disabled:cursor-not-allowed
               ${errors.password ? 'border-danger' : 'border-border'}`}
             placeholder="••••••••••"
@@ -77,7 +77,7 @@ export default function LoginForm({ onSubmit, loading, serverError }) {
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
-            className="absolute inset-y-0 right-0 flex items-center pr-3 text-text-secondary hover:text-text-primary"
+            className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-text-secondary hover:text-text-primary cursor-pointer"
             aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -88,7 +88,7 @@ export default function LoginForm({ onSubmit, loading, serverError }) {
         )}
       </div>
 
-      <Button type="submit" loading={loading} className="w-full" size="lg">
+      <Button type="submit" loading={loading} className="w-full" size="md">
         Sign In →
       </Button>
     </form>

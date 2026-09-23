@@ -15,16 +15,27 @@ export async function sendLeadToN8n(leadData) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
+      // Standard snake_case
       full_name: leadData.fullName,
+      name: leadData.fullName,
       email: leadData.email,
       phone: leadData.phone || null,
       business_type: leadData.businessType,
       main_challenge: leadData.mainChallenge,
+      challenge: leadData.mainChallenge,
       business_age: leadData.businessAge || null,
       main_goal: leadData.mainGoal,
+      goal: leadData.mainGoal,
       urgency: leadData.urgency || null,
       source: 'public_form',
       submitted_at: new Date().toISOString(),
+
+      // CamelCase aliases
+      fullName: leadData.fullName,
+      businessType: leadData.businessType,
+      mainChallenge: leadData.mainChallenge,
+      businessAge: leadData.businessAge || null,
+      mainGoal: leadData.mainGoal,
     }),
   });
 

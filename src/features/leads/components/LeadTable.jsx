@@ -5,10 +5,19 @@ import EmptyState from '../../../components/ui/EmptyState';
 import Button from '../../../components/ui/Button';
 import { DEFAULT_PAGE_SIZE } from '../../../lib/constants';
 
-export default function LeadTable({ leads, loading, error, total, page, totalPages, onPageChange, onRetry }) {
+export default function LeadTable({
+  leads,
+  loading,
+  error,
+  total,
+  page,
+  totalPages,
+  onPageChange,
+  onRetry,
+}) {
   if (error) {
     return (
-      <div className="bg-surface rounded-card border border-border">
+      <div className="bg-surface rounded-card border border-border shadow-card p-8">
         <EmptyState
           icon={Users}
           title="Failed to load leads"
@@ -27,33 +36,45 @@ export default function LeadTable({ leads, loading, error, total, page, totalPag
   const end = Math.min(page * DEFAULT_PAGE_SIZE, total);
 
   return (
-    <div className="bg-surface rounded-card border border-border overflow-hidden">
+    <div className="bg-surface rounded-card border border-border shadow-card overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left" aria-label="Leads table">
           <thead>
-            <tr className="border-b border-border bg-background">
-              <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase tracking-wide">Lead</th>
-              <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase tracking-wide hidden sm:table-cell">Business Type</th>
-              <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase tracking-wide hidden md:table-cell">Challenge</th>
-              <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase tracking-wide">Status</th>
-              <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase tracking-wide hidden lg:table-cell">Follow-up</th>
-              <th className="px-4 py-3 text-xs font-medium text-text-secondary uppercase tracking-wide hidden lg:table-cell">Created</th>
-              <th className="px-4 py-3 w-16"></th>
+            <tr className="border-b border-border bg-surface">
+              <th className="px-5 py-3.5 text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
+                Name &amp; Contact
+              </th>
+              <th className="px-5 py-3.5 text-[11px] font-semibold text-text-secondary uppercase tracking-wider hidden sm:table-cell">
+                Business Type
+              </th>
+              <th className="px-5 py-3.5 text-[11px] font-semibold text-text-secondary uppercase tracking-wider hidden md:table-cell">
+                Challenge
+              </th>
+              <th className="px-5 py-3.5 text-[11px] font-semibold text-text-secondary uppercase tracking-wider text-center">
+                Status
+              </th>
+              <th className="px-5 py-3.5 text-[11px] font-semibold text-text-secondary uppercase tracking-wider hidden lg:table-cell">
+                Follow-up / Session
+              </th>
+              <th className="px-5 py-3.5 text-[11px] font-semibold text-text-secondary uppercase tracking-wider hidden xl:table-cell">
+                Received
+              </th>
+              <th className="px-5 py-3.5 w-16"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {loading ? (
               <tr>
-                <td colSpan={7} className="py-16 text-center">
+                <td colSpan={7} className="py-20 text-center">
                   <div className="flex flex-col items-center gap-3">
-                    <Spinner size="lg" />
-                    <span className="text-sm text-text-secondary">Loading leads...</span>
+                    <Spinner size="lg" className="text-accent" />
+                    <span className="text-sm text-text-secondary">Loading enquiries...</span>
                   </div>
                 </td>
               </tr>
             ) : leads.length === 0 ? (
               <tr>
-                <td colSpan={7}>
+                <td colSpan={7} className="py-16">
                   <EmptyState
                     icon={Users}
                     title="No leads found"
@@ -68,17 +89,18 @@ export default function LeadTable({ leads, loading, error, total, page, totalPag
         </table>
       </div>
 
-      {/* Pagination */}
+      {/* Pagination Bar */}
       {!loading && total > 0 && (
-        <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+        <div className="flex items-center justify-between px-5 py-3.5 border-t border-border bg-surface">
           <p className="text-xs text-text-secondary">
-            Showing {start}–{end} of {total} leads
+            Showing <span className="font-semibold text-text-primary">{start}–{end}</span> of{' '}
+            <span className="font-semibold text-text-primary">{total}</span> enquiries
           </p>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <button
               onClick={() => onPageChange(page - 1)}
               disabled={page <= 1}
-              className="h-8 w-8 flex items-center justify-center rounded text-text-secondary hover:bg-background disabled:opacity-40 disabled:cursor-not-allowed transition-base"
+              className="h-8 w-8 flex items-center justify-center rounded-btn border border-border text-text-secondary hover:bg-hover hover:text-text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-base cursor-pointer"
               aria-label="Previous page"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -88,7 +110,9 @@ export default function LeadTable({ leads, loading, error, total, page, totalPag
               .map((p, idx, arr) => {
                 if (idx > 0 && arr[idx - 1] !== p - 1) {
                   return [
-                    <span key={`ellipsis-${p}`} className="px-1 text-xs text-text-secondary">…</span>,
+                    <span key={`ellipsis-${p}`} className="px-1 text-xs text-text-muted">
+                      …
+                    </span>,
                     <PageButton key={p} p={p} current={page} onClick={onPageChange} />,
                   ];
                 }
@@ -97,7 +121,7 @@ export default function LeadTable({ leads, loading, error, total, page, totalPag
             <button
               onClick={() => onPageChange(page + 1)}
               disabled={page >= totalPages}
-              className="h-8 w-8 flex items-center justify-center rounded text-text-secondary hover:bg-background disabled:opacity-40 disabled:cursor-not-allowed transition-base"
+              className="h-8 w-8 flex items-center justify-center rounded-btn border border-border text-text-secondary hover:bg-hover hover:text-text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-base cursor-pointer"
               aria-label="Next page"
             >
               <ChevronRight className="h-4 w-4" />
@@ -110,15 +134,16 @@ export default function LeadTable({ leads, loading, error, total, page, totalPag
 }
 
 function PageButton({ p, current, onClick }) {
+  const isActive = p === current;
   return (
     <button
       onClick={() => onClick(p)}
-      className={`h-8 w-8 flex items-center justify-center rounded text-xs font-medium transition-base
-        ${p === current
-          ? 'bg-accent text-white'
-          : 'text-text-secondary hover:bg-background hover:text-text-primary'
-        }`}
-      aria-current={p === current ? 'page' : undefined}
+      className={`h-8 min-w-[32px] px-2 flex items-center justify-center rounded-btn text-xs font-semibold transition-base cursor-pointer ${
+        isActive
+          ? 'bg-accent text-white shadow-xs'
+          : 'border border-border text-text-secondary hover:bg-hover hover:text-text-primary'
+      }`}
+      aria-current={isActive ? 'page' : undefined}
     >
       {p}
     </button>

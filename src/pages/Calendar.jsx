@@ -1,6 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../components/layout/AdminLayout';
+import Modal from '../components/ui/Modal';
+import Button from '../components/ui/Button';
 import {
   ChevronLeft,
   ChevronRight,
@@ -12,15 +14,74 @@ import {
   Calendar as CalIcon,
 } from 'lucide-react';
 import { useCalendar } from '../features/calendar/hooks/useCalendar';
+import { fetchRecentLeads } from '../features/leads/services/leadService';
+import { useToast } from '../components/ui/Toast';
 import { CAL_BOOKING_URL } from '../lib/constants';
 import { formatDate } from '../lib/utils';
 
 export default function CalendarPage() {
   const navigate = useNavigate();
-  const { consultations, loading } = useCalendar();
+  const toast = useToast();
+  const { consultations, loading, scheduleConsultation } = useCalendar();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState('Month');
   const [selectedConsultation, setSelectedConsultation] = useState(null);
+
+  // Schedule Modal State
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [leadsList, setLeadsList] = useState([]);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [scheduleForm, setScheduleForm] = useState({
+    lead_id: '',
+    date: '2026-10-01',
+    time: '10:00',
+    meeting_url: 'https://meet.google.com/coaching-session',
+  });
+
+  useEffect(() => {
+    fetchRecentLeads(50)
+      .then((leads) => {
+        setLeadsList(leads || []);
+        if (leads && leads.length > 0 && !scheduleForm.lead_id) {
+          setScheduleForm((prev) => ({ ...prev, lead_id: leads[0].id }));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleOpenScheduleForDate = (dateObj) => {
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    setScheduleForm((prev) => ({
+      ...prev,
+      date: `${year}-${month}-${day}`,
+    }));
+    setScheduleModalOpen(true);
+  };
+
+  const handleScheduleSubmit = async (e) => {
+    e.preventDefault();
+    if (!scheduleForm.lead_id) {
+      toast({ message: 'Please select a lead.', type: 'error' });
+      return;
+    }
+    setScheduleLoading(true);
+    try {
+      const startTime = new Date(`${scheduleForm.date}T${scheduleForm.time}:00`).toISOString();
+      await scheduleConsultation({
+        lead_id: scheduleForm.lead_id,
+        start_time: startTime,
+        meeting_url: scheduleForm.meeting_url,
+      });
+      toast({ message: 'Consultation scheduled successfully!', type: 'success' });
+      setScheduleModalOpen(false);
+    } catch (err) {
+      toast({ message: err.message || 'Failed to schedule consultation.', type: 'error' });
+    } finally {
+      setScheduleLoading(false);
+    }
+  };
 
   const daysOfWeek = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 
@@ -39,7 +100,7 @@ export default function CalendarPage() {
     setCurrentDate(new Date());
   };
 
-  // Build real dynamic calendar grid
+  // Calendar Grid calculation
   const calendarGrid = useMemo(() => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -47,109 +108,111 @@ export default function CalendarPage() {
     const firstDayOfMonth = new Date(year, month, 1);
     const lastDayOfMonth = new Date(year, month + 1, 0);
 
-    // Monday-based day of week (0 = Mon, 6 = Sun)
-    let startDay = firstDayOfMonth.getDay() - 1;
+    let startDay = firstDayOfMonth.getDay() - 1; // 0=Mon, 6=Sun
     if (startDay === -1) startDay = 6;
 
-    const daysInPrevMonth = new Date(year, month, 0).getDate();
-    const daysInCurrentMonth = lastDayOfMonth.getDate();
+    const daysInMonth = lastDayOfMonth.getDate();
+    const prevMonthLastDay = new Date(year, month, 0).getDate();
 
     const grid = [];
 
     // Prev month padding
     for (let i = startDay - 1; i >= 0; i--) {
+      const dayNum = prevMonthLastDay - i;
+      const d = new Date(year, month - 1, dayNum);
       grid.push({
-        day: daysInPrevMonth - i,
+        day: dayNum,
+        date: d,
         isOutside: true,
-        date: new Date(year, month - 1, daysInPrevMonth - i),
+        isToday: false,
+        consultations: [],
       });
     }
 
     // Current month days
-    for (let i = 1; i <= daysInCurrentMonth; i++) {
-      const date = new Date(year, month, i);
+    const today = new Date();
+    for (let i = 1; i <= daysInMonth; i++) {
+      const d = new Date(year, month, i);
       const isToday =
-        date.getDate() === new Date().getDate() &&
-        date.getMonth() === new Date().getMonth() &&
-        date.getFullYear() === new Date().getFullYear();
+        today.getDate() === i &&
+        today.getMonth() === month &&
+        today.getFullYear() === year;
 
-      // Find real consultations for this day
-      const dayConsultations = consultations.filter((c) => {
-        const cDate = new Date(c.start_time);
+      const matchingConsultations = consultations.filter((c) => {
+        if (!c.start_time) return false;
+        const cStart = new Date(c.start_time);
         return (
-          cDate.getDate() === i &&
-          cDate.getMonth() === month &&
-          cDate.getFullYear() === year
+          cStart.getDate() === i &&
+          cStart.getMonth() === month &&
+          cStart.getFullYear() === year
         );
       });
 
       grid.push({
         day: i,
+        date: d,
         isOutside: false,
         isToday,
-        date,
-        consultations: dayConsultations,
+        consultations: matchingConsultations,
       });
     }
 
-    // Next month padding to fill 35 or 42 cells
-    const remaining = (7 - (grid.length % 7)) % 7;
+    // Next month padding to fill complete weeks (up to 35 or 42)
+    const totalCells = grid.length > 35 ? 42 : 35;
+    const remaining = totalCells - grid.length;
     for (let i = 1; i <= remaining; i++) {
+      const d = new Date(year, month + 1, i);
       grid.push({
         day: i,
+        date: d,
         isOutside: true,
-        date: new Date(year, month + 1, i),
+        isToday: false,
+        consultations: [],
       });
     }
 
     return grid;
   }, [currentDate, consultations]);
 
-  // Active displayed consultation: selected or first upcoming
-  const activeBrief = useMemo(() => {
-    if (selectedConsultation) return selectedConsultation;
-    if (consultations && consultations.length > 0) return consultations[0];
-    return null;
-  }, [selectedConsultation, consultations]);
+  // Active brief consultation
+  const activeBrief = selectedConsultation || (consultations.length > 0 ? consultations[0] : null);
 
+  // This week's sessions
   const thisWeekConsultations = useMemo(() => {
-    return consultations.filter((c) => {
-      const cDate = new Date(c.start_time);
-      const now = new Date();
-      const nextWeek = new Date();
-      nextWeek.setDate(now.getDate() + 7);
-      return cDate >= now && cDate <= nextWeek;
-    });
+    return consultations.slice(0, 5);
   }, [consultations]);
 
   return (
     <AdminLayout>
       <div className="space-y-6">
-        {/* Header and Controls */}
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+        {/* Header with Navigation Controls */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-[#1C1917] tracking-tight">Calendar</h1>
-            <p className="text-xs text-[#78716C] mt-1 font-medium">
-              View and manage your upcoming coaching consultations.
+            <h1 className="text-2xl sm:text-[32px] font-[650] text-text-primary tracking-tight leading-tight">
+              Advisory Calendar
+            </h1>
+            <p className="text-sm text-text-secondary mt-1 font-normal">
+              Manage executive consultations, 1:1 strategy calls, and booked client sessions.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Month selector */}
-            <div className="flex items-center bg-white border border-[#EDE5DA] rounded-xl px-2 py-1 shadow-sm">
+          {/* Controls: Prev/Next Month + Today + View + Schedule */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Month Navigator */}
+            <div className="flex items-center bg-surface border border-border rounded-btn px-2 py-1 shadow-xs">
               <button
                 onClick={prevMonth}
-                className="p-1.5 text-[#78716C] hover:text-[#1C1917] transition-colors rounded cursor-pointer"
+                className="p-1.5 text-text-secondary hover:text-text-primary transition-colors rounded cursor-pointer"
                 title="Previous Month"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              <span className="px-3 text-xs font-bold text-[#1C1917] min-w-[110px] text-center">
+              <span className="px-3 text-xs font-semibold text-text-primary min-w-[110px] text-center">
                 {monthName}
               </span>
               <button
                 onClick={nextMonth}
-                className="p-1.5 text-[#78716C] hover:text-[#1C1917] transition-colors rounded cursor-pointer"
+                className="p-1.5 text-text-secondary hover:text-text-primary transition-colors rounded cursor-pointer"
                 title="Next Month"
               >
                 <ChevronRight className="h-4 w-4" />
@@ -159,21 +222,21 @@ export default function CalendarPage() {
             {/* Today button */}
             <button
               onClick={setToday}
-              className="px-3.5 py-1.5 text-xs font-semibold bg-white border border-[#EDE5DA] rounded-xl text-[#443E3A] hover:bg-[#FAF7F2] transition-colors shadow-sm cursor-pointer"
+              className="px-3.5 py-1.5 text-xs font-semibold bg-surface border border-border rounded-btn text-text-primary hover:bg-hover transition-colors shadow-xs cursor-pointer"
             >
               Today
             </button>
 
             {/* View switcher */}
-            <div className="flex items-center bg-[#F2EDE6] p-0.5 rounded-xl text-xs font-medium border border-[#E6E0D6]">
+            <div className="flex items-center bg-hover p-0.5 rounded-btn text-xs font-medium border border-border">
               {['Month', 'Week', 'Agenda'].map((view) => (
                 <button
                   key={view}
                   onClick={() => setCurrentView(view)}
-                  className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                  className={`px-3 py-1 rounded-[8px] transition-all cursor-pointer ${
                     currentView === view
-                      ? 'bg-white text-[#1C1917] font-semibold shadow-sm'
-                      : 'text-[#78716C] hover:text-[#1C1917]'
+                      ? 'bg-surface text-text-primary font-semibold shadow-xs'
+                      : 'text-text-secondary hover:text-text-primary'
                   }`}
                 >
                   {view}
@@ -182,28 +245,28 @@ export default function CalendarPage() {
             </div>
 
             {/* Schedule Consultation Button */}
-            <a
-              href={CAL_BOOKING_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 bg-[#8C432D] hover:bg-[#793926] text-white text-xs font-semibold px-4 py-2 rounded-xl transition-colors shadow-sm cursor-pointer"
+            <Button
+              onClick={() => setScheduleModalOpen(true)}
+              variant="primary"
+              size="md"
+              className="gap-1.5"
             >
-              <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
+              <Plus className="h-4 w-4 stroke-[2.5]" />
               <span>Schedule Consultation</span>
-            </a>
+            </Button>
           </div>
         </div>
 
         {/* Calendar Grid + Right Detail Panel */}
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
           {/* Main Calendar View (8 cols) */}
-          <div className="xl:col-span-8 bg-white rounded-2xl border border-[#EDE5DA] shadow-[0_2px_8px_-2px_rgba(0,0,0,0.03)] p-5">
+          <div className="xl:col-span-8 bg-surface rounded-card border border-border shadow-card p-5">
             {/* Days of week */}
-            <div className="grid grid-cols-7 border-b border-[#EDE5DA] pb-3 text-center">
+            <div className="grid grid-cols-7 border-b border-border pb-3 text-center">
               {daysOfWeek.map((day) => (
                 <span
                   key={day}
-                  className="text-[11px] font-bold text-[#78716C] uppercase tracking-wider"
+                  className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider"
                 >
                   {day}
                 </span>
@@ -212,36 +275,36 @@ export default function CalendarPage() {
 
             {/* Grid Days */}
             {loading ? (
-              <div className="py-24 text-center text-xs text-[#78716C]">Loading calendar events...</div>
+              <div className="py-24 text-center text-xs text-text-secondary">Loading calendar events...</div>
             ) : (
-              <div className="grid grid-cols-7 border-l border-t border-[#EDE5DA] mt-2">
+              <div className="grid grid-cols-7 border-l border-t border-border mt-2">
                 {calendarGrid.map((item, index) => {
                   const hasEvents = item.consultations && item.consultations.length > 0;
                   return (
                     <div
                       key={index}
-                      className={`min-h-[88px] sm:min-h-[96px] p-2 border-r border-b border-[#EDE5DA] transition-colors relative flex flex-col justify-between ${
+                      className={`min-h-[88px] sm:min-h-[96px] p-2 border-r border-b border-border transition-colors relative flex flex-col justify-between ${
                         item.isOutside
-                          ? 'bg-[#FAF7F2]/80 text-[#A8A29E]'
+                          ? 'bg-hover/60 text-text-muted'
                           : item.isToday
-                          ? 'bg-[#FAF4ED]'
-                          : 'bg-white hover:bg-[#FAF7F2]'
+                          ? 'bg-accent-light/40'
+                          : 'bg-surface hover:bg-hover/70'
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <span
-                          className={`text-xs font-bold ${
+                          className={`text-xs font-semibold ${
                             item.isOutside
-                              ? 'text-[#A8A29E]'
+                              ? 'text-text-muted'
                               : item.isToday
-                              ? 'text-[#8C432D]'
-                              : 'text-[#1C1917]'
+                              ? 'text-accent font-bold'
+                              : 'text-text-primary'
                           }`}
                         >
                           {item.day}
                         </span>
                         {item.isToday && (
-                          <span className="h-1.5 w-1.5 rounded-full bg-[#8C432D]" />
+                          <span className="h-1.5 w-1.5 rounded-full bg-accent" />
                         )}
                       </div>
 
@@ -251,7 +314,7 @@ export default function CalendarPage() {
                             <button
                               key={c.id}
                               onClick={() => setSelectedConsultation(c)}
-                              className="w-full text-left bg-[#E8F5EE] border border-[#2D7A51]/20 text-[#2D7A51] rounded-lg p-1.5 text-[10px] leading-tight font-medium shadow-xs hover:bg-[#DDF0E5] transition-colors cursor-pointer block"
+                              className="w-full text-left bg-success-light border border-success/20 text-success rounded-md p-1.5 text-[10px] leading-tight font-medium shadow-xs hover:bg-success-light/80 transition-colors cursor-pointer block"
                             >
                               <span className="font-bold block">
                                 {new Date(c.start_time).toLocaleTimeString('en-US', {
@@ -259,7 +322,7 @@ export default function CalendarPage() {
                                   minute: '2-digit',
                                 })}
                               </span>
-                              <span className="truncate block opacity-90">
+                              <span className="truncate block opacity-95">
                                 {c.leads?.full_name || c.title || 'Consultation'}
                               </span>
                             </button>
@@ -273,23 +336,23 @@ export default function CalendarPage() {
             )}
 
             {/* Legend & Timezone Footer */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-[#EDE5DA] mt-4 text-xs text-[#78716C]">
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-border mt-4 text-xs text-text-secondary">
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1.5">
-                  <span className="h-3 w-3 rounded bg-[#E8F5EE] border border-[#2D7A51]/30" />
-                  <span className="text-[11px] font-medium text-[#57524E]">
+                  <span className="h-3 w-3 rounded bg-success-light border border-success/30" />
+                  <span className="text-[11px] font-medium text-text-secondary">
                     Confirmed Advisory ({consultations.length} total)
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="h-3 w-3 rounded bg-[#FAF7F2] border border-[#EDE5DA]" />
-                  <span className="text-[11px] font-medium text-[#57524E]">
+                  <span className="h-3 w-3 rounded bg-hover border border-border" />
+                  <span className="text-[11px] font-medium text-text-secondary">
                     Executive Focus Time
                   </span>
                 </div>
               </div>
 
-              <span className="text-[11px] text-[#78716C]">
+              <span className="text-[11px] text-text-secondary">
                 Timezone: {Intl.DateTimeFormat().resolvedOptions().timeZone}
               </span>
             </div>
@@ -298,14 +361,14 @@ export default function CalendarPage() {
           {/* Right Column: Brief & Week Sessions (4 cols) */}
           <div className="xl:col-span-4 space-y-5">
             {/* Card 1: Consultation Brief */}
-            <div className="bg-white rounded-2xl border border-[#EDE5DA] shadow-[0_2px_8px_-2px_rgba(0,0,0,0.03)] p-5">
-              <div className="flex items-center justify-between pb-3 border-b border-[#EDE5DA]">
-                <h3 className="text-sm font-bold text-[#1C1917] tracking-tight">
+            <div className="bg-surface rounded-card border border-border shadow-card p-5">
+              <div className="flex items-center justify-between pb-3 border-b border-border">
+                <h3 className="text-sm font-semibold text-text-primary tracking-tight">
                   Consultation Brief
                 </h3>
                 {activeBrief && (
-                  <span className="inline-flex items-center gap-1 bg-[#E8F5EE] text-[#2D7A51] text-[11px] font-bold px-2 py-0.5 rounded-md">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#2D7A51]" />
+                  <span className="inline-flex items-center gap-1 bg-success-light text-success text-[11px] font-semibold px-2 py-0.5 rounded-md border border-success/20">
+                    <span className="h-1.5 w-1.5 rounded-full bg-success" />
                     {activeBrief.status || 'Confirmed'}
                   </span>
                 )}
@@ -315,35 +378,35 @@ export default function CalendarPage() {
                 <div className="pt-4 space-y-4">
                   {/* Client info */}
                   <div className="flex items-center gap-3">
-                    <div className="h-11 w-11 rounded-full bg-[#EFE8E1] text-[#8C432D] font-bold text-sm flex items-center justify-center shrink-0 ring-1 ring-black/5">
+                    <div className="h-11 w-11 rounded-full bg-accent-light text-accent font-semibold text-sm flex items-center justify-center shrink-0">
                       {activeBrief.leads?.full_name?.slice(0, 2).toUpperCase() || 'EA'}
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-[#1C1917]">
+                      <h4 className="text-sm font-semibold text-text-primary">
                         {activeBrief.leads?.full_name || 'Client Name'}
                       </h4>
-                      <p className="text-xs text-[#78716C] mt-0.5">
+                      <p className="text-xs text-text-secondary mt-0.5">
                         {activeBrief.title || 'Executive Advisory Consultation'}
                       </p>
                     </div>
                   </div>
 
                   {/* Date & Time */}
-                  <div className="bg-[#FAF7F2] rounded-xl p-3 border border-[#EDE5DA] space-y-2 text-xs">
-                    <div className="flex items-center gap-2 text-[#443E3A]">
-                      <Clock className="h-3.5 w-3.5 text-[#8C432D] shrink-0" />
+                  <div className="bg-background rounded-btn p-3 border border-border space-y-2 text-xs">
+                    <div className="flex items-center gap-2 text-text-primary font-medium">
+                      <Clock className="h-3.5 w-3.5 text-accent shrink-0" />
                       <span>{formatDate(activeBrief.start_time)}</span>
                     </div>
                     {activeBrief.meeting_url && (
-                      <div className="flex items-center gap-2 text-[#443E3A]">
-                        <Video className="h-3.5 w-3.5 text-[#8C432D] shrink-0" />
+                      <div className="flex items-center gap-2 text-text-primary font-medium">
+                        <Video className="h-3.5 w-3.5 text-accent shrink-0" />
                         <span className="truncate">
                           Meeting Link:{' '}
                           <a
                             href={activeBrief.meeting_url}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-[#8C432D] underline"
+                            className="text-accent underline"
                           >
                             {activeBrief.meeting_url}
                           </a>
@@ -358,7 +421,7 @@ export default function CalendarPage() {
                       href={activeBrief.meeting_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="w-full flex items-center justify-center gap-2 bg-[#8C432D] hover:bg-[#793926] text-white font-semibold text-xs py-2.5 rounded-xl transition-colors shadow-sm cursor-pointer"
+                      className="w-full flex items-center justify-center gap-2 bg-accent hover:bg-accent-dark text-white font-semibold text-xs py-2.5 rounded-btn transition-colors shadow-xs cursor-pointer"
                     >
                       <Video className="h-4 w-4" />
                       <span>Join Room</span>
@@ -367,10 +430,10 @@ export default function CalendarPage() {
 
                   {/* Strategic Context */}
                   <div className="space-y-1.5 pt-1">
-                    <span className="text-[10px] font-bold text-[#78716C] uppercase tracking-wider block">
+                    <span className="text-[10px] font-semibold text-text-secondary uppercase tracking-wider block">
                       Lead Strategic Context
                     </span>
-                    <div className="p-3 bg-[#FAF7F2] rounded-xl border border-[#EDE5DA] text-xs text-[#443E3A] leading-relaxed">
+                    <div className="p-3 bg-background rounded-btn border border-border text-xs text-text-primary leading-relaxed">
                       {activeBrief.leads?.main_challenge ||
                         'Executive practice client consultation context.'}
                     </div>
@@ -380,7 +443,7 @@ export default function CalendarPage() {
                   {activeBrief.lead_id && (
                     <button
                       onClick={() => navigate(`/admin/leads/${activeBrief.lead_id}`)}
-                      className="text-xs font-semibold text-[#8C432D] hover:underline flex items-center gap-1 cursor-pointer pt-1"
+                      className="text-xs font-semibold text-accent hover:underline flex items-center gap-1 cursor-pointer pt-1"
                     >
                       <span>View Lead Details</span>
                       <ArrowRight className="h-3 w-3" />
@@ -389,11 +452,11 @@ export default function CalendarPage() {
                 </div>
               ) : (
                 <div className="py-10 text-center space-y-2">
-                  <div className="h-10 w-10 mx-auto rounded-full bg-[#EFE8E1] text-[#8C432D] flex items-center justify-center">
+                  <div className="h-10 w-10 mx-auto rounded-full bg-accent-light text-accent flex items-center justify-center">
                     <CalIcon className="h-5 w-5" />
                   </div>
-                  <h4 className="text-xs font-bold text-[#1C1917]">No Consultation Selected</h4>
-                  <p className="text-[11px] text-[#78716C]">
+                  <h4 className="text-xs font-semibold text-text-primary">No Consultation Selected</h4>
+                  <p className="text-[11px] text-text-secondary">
                     Bookings will display full client briefing notes here.
                   </p>
                 </div>
@@ -401,36 +464,36 @@ export default function CalendarPage() {
             </div>
 
             {/* Card 2: This Week's Consultations */}
-            <div className="bg-white rounded-2xl border border-[#EDE5DA] shadow-[0_2px_8px_-2px_rgba(0,0,0,0.03)] p-5">
-              <div className="flex items-center justify-between pb-3 border-b border-[#EDE5DA]">
+            <div className="bg-surface rounded-card border border-border shadow-card p-5">
+              <div className="flex items-center justify-between pb-3 border-b border-border">
                 <div>
-                  <h3 className="text-sm font-bold text-[#1C1917] tracking-tight">
+                  <h3 className="text-sm font-semibold text-text-primary tracking-tight">
                     This Week&apos;s Consultations
                   </h3>
                 </div>
-                <span className="text-[11px] font-bold text-[#78716C]">
+                <span className="text-[11px] font-semibold text-text-secondary">
                   {thisWeekConsultations.length} Sessions
                 </span>
               </div>
 
               {thisWeekConsultations.length === 0 ? (
-                <div className="py-6 text-center text-xs text-[#78716C]">
+                <div className="py-6 text-center text-xs text-text-secondary">
                   No consultations scheduled for this week.
                 </div>
               ) : (
-                <div className="divide-y divide-[#F2EDE6] mt-2">
+                <div className="divide-y divide-border mt-2">
                   {thisWeekConsultations.map((c) => (
                     <div key={c.id} className="py-3 space-y-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-[#1C1917]">
+                        <span className="text-xs font-semibold text-text-primary">
                           {c.leads?.full_name || 'Client Session'}
                         </span>
-                        <button className="text-[#A8A29E] hover:text-[#1C1917]">
+                        <button className="text-text-muted hover:text-text-primary">
                           <MoreVertical className="h-3.5 w-3.5" />
                         </button>
                       </div>
-                      <p className="text-xs text-[#78716C]">{c.title || 'Advisory Call'}</p>
-                      <p className="text-[11px] text-[#2D7A51] font-semibold">
+                      <p className="text-xs text-text-secondary">{c.title || 'Advisory Call'}</p>
+                      <p className="text-[11px] text-success font-semibold">
                         {formatDate(c.start_time)}
                       </p>
                     </div>
@@ -438,13 +501,13 @@ export default function CalendarPage() {
                 </div>
               )}
 
-              <div className="pt-3 border-t border-[#EDE5DA] mt-2 flex items-center justify-between text-[11px]">
-                <span className="text-[#78716C]">Calendar connection: Cal.com</span>
+              <div className="pt-3 border-t border-border mt-2 flex items-center justify-between text-[11px]">
+                <span className="text-text-secondary">Calendar connection: Cal.com</span>
                 <a
                   href={CAL_BOOKING_URL}
                   target="_blank"
                   rel="noreferrer"
-                  className="font-semibold text-[#8C432D] hover:underline cursor-pointer"
+                  className="font-semibold text-accent hover:underline cursor-pointer"
                 >
                   Manage Availability
                 </a>
@@ -453,6 +516,94 @@ export default function CalendarPage() {
           </div>
         </div>
       </div>
+
+      {/* Schedule Consultation Modal */}
+      <Modal
+        isOpen={scheduleModalOpen}
+        onClose={() => setScheduleModalOpen(false)}
+        title="Schedule Coaching Consultation"
+        description="Book a 1:1 strategy session directly to your calendar."
+        size="md"
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => setScheduleModalOpen(false)}
+              disabled={scheduleLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              loading={scheduleLoading}
+              onClick={handleScheduleSubmit}
+            >
+              Save Consultation
+            </Button>
+          </>
+        }
+      >
+        <form onSubmit={handleScheduleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-text-primary mb-1.5">
+              Select Client / Lead *
+            </label>
+            <select
+              value={scheduleForm.lead_id}
+              onChange={(e) => setScheduleForm((prev) => ({ ...prev, lead_id: e.target.value }))}
+              className="w-full px-3.5 py-2.5 text-xs bg-surface border border-border rounded-btn text-text-primary focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all cursor-pointer"
+              required
+            >
+              <option value="">-- Choose an Enquiry --</option>
+              {leadsList.map((lead) => (
+                <option key={lead.id} value={lead.id}>
+                  {lead.full_name || lead.name || 'Client'} ({lead.email}) — {lead.business_type || 'Lead'}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-text-primary mb-1.5">
+                Session Date *
+              </label>
+              <input
+                type="date"
+                value={scheduleForm.date}
+                onChange={(e) => setScheduleForm((prev) => ({ ...prev, date: e.target.value }))}
+                className="w-full px-3.5 py-2 text-xs bg-surface border border-border rounded-btn text-text-primary focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-text-primary mb-1.5">
+                Start Time *
+              </label>
+              <input
+                type="time"
+                value={scheduleForm.time}
+                onChange={(e) => setScheduleForm((prev) => ({ ...prev, time: e.target.value }))}
+                className="w-full px-3.5 py-2 text-xs bg-surface border border-border rounded-btn text-text-primary focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-text-primary mb-1.5">
+              Meeting URL
+            </label>
+            <input
+              type="url"
+              value={scheduleForm.meeting_url}
+              onChange={(e) => setScheduleForm((prev) => ({ ...prev, meeting_url: e.target.value }))}
+              placeholder="https://meet.google.com/xyz-uvwx-yzz"
+              className="w-full px-3.5 py-2 text-xs bg-surface border border-border rounded-btn text-text-primary focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+            />
+          </div>
+        </form>
+      </Modal>
     </AdminLayout>
   );
 }

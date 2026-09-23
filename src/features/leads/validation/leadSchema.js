@@ -18,7 +18,7 @@ export function validateLeadForm(values) {
   if (!values.mainChallenge?.trim()) {
     errors.mainChallenge = 'Main business challenge is required.';
   } else if (values.mainChallenge.trim().length < 10) {
-    errors.mainChallenge = 'Please provide more detail about your challenge.';
+    errors.mainChallenge = 'Please provide more detail about your challenge (at least 10 characters).';
   }
 
   if (!values.mainGoal?.trim()) {

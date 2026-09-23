@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchProfile, upsertProfile } from '../services/settingsService';
+import { fetchProfile, upsertProfile, uploadAvatar } from '../services/settingsService';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { isSupabaseConfigured } from '../../../config/env';
 
@@ -8,6 +8,7 @@ export function useSettings() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -16,7 +17,7 @@ export function useSettings() {
       return;
     }
     setLoading(true);
-    fetchProfile(user.id)
+    fetchProfile(user.id, user)
       .then((data) => setProfile(data || {}))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -38,5 +39,39 @@ export function useSettings() {
     }
   }
 
-  return { profile, loading, saving, error, saveProfile };
+  async function uploadPhoto(file) {
+    if (!user) throw new Error('Not authenticated.');
+    setUploading(true);
+    setError(null);
+    try {
+      const publicUrl = await uploadAvatar(user.id, file);
+      const updated = await upsertProfile(user.id, { avatar_url: publicUrl });
+      setProfile(updated);
+      return publicUrl;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function removePhoto() {
+    if (!user) throw new Error('Not authenticated.');
+    setUploading(true);
+    setError(null);
+    try {
+      const updated = await upsertProfile(user.id, { avatar_url: null });
+      setProfile(updated);
+      return null;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return { profile, loading, saving, uploading, error, saveProfile, uploadPhoto, removePhoto };
 }
+

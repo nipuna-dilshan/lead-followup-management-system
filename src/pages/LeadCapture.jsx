@@ -7,7 +7,8 @@ import Button from '../components/ui/Button';
 import { BUSINESS_TYPES, BUSINESS_AGES, URGENCY_OPTIONS } from '../features/leads/constants/leadOptions';
 import { validatePublicLeadForm } from '../features/leads/validation/leadSchema';
 import { sendLeadToN8n } from '../lib/n8n';
-import { isN8nConfigured } from '../config/env';
+import { createLead } from '../features/leads/services/leadService';
+import { isN8nConfigured, isSupabaseConfigured } from '../config/env';
 
 const initialValues = {
   fullName: '',
@@ -48,21 +49,46 @@ export default function LeadCapture() {
       return;
     }
 
-    if (!isN8nConfigured) {
+    if (!isN8nConfigured && !isSupabaseConfigured) {
       setStatus('error');
       setErrorMessage('The enquiry service is not currently configured. Please contact us directly.');
       return;
     }
 
+    if (status === 'submitting') return;
+
     setStatus('submitting');
     setErrorMessage('');
 
     try {
-      await sendLeadToN8n(values);
+      // 1. If n8n is configured, let n8n handle lead storage and email automation
+      if (isN8nConfigured) {
+        await sendLeadToN8n(values);
+      } else if (isSupabaseConfigured) {
+        // Fallback: If n8n is not configured, save directly to Supabase
+        await createLead(values);
+      }
+
       setStatus('success');
     } catch (err) {
+      console.warn('Primary submission failed, attempting direct Supabase fallback:', err);
+      
+      // Safety Fallback: If n8n failed or was unreachable, save directly to Supabase so the lead is never lost
+      if (isSupabaseConfigured) {
+        try {
+          await createLead(values);
+          setStatus('success');
+          return;
+        } catch (dbErr) {
+          console.error('Direct Supabase save also failed:', dbErr);
+        }
+      }
+
+      console.error('Lead submission failed:', err);
       setStatus('error');
-      setErrorMessage('Unable to connect to the enquiry service. Please try again or contact us directly.');
+      setErrorMessage(
+        'Unable to connect to the enquiry service. Please check your connection or contact us directly.'
+      );
     }
   }
 
@@ -268,6 +294,7 @@ export default function LeadCapture() {
                 size="lg"
                 className="w-full"
                 loading={status === 'submitting'}
+                disabled={status === 'submitting'}
               >
                 Request My Free Consultation →
               </Button>

@@ -9,14 +9,14 @@ export default function LeadInfo({ lead }) {
     <div className="space-y-4">
       {/* Contact */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-background rounded-btn p-4">
+        <div className="bg-background border border-border rounded-btn p-4">
           <p className="text-xs text-text-secondary mb-1.5 font-medium uppercase tracking-wide">Direct Email</p>
           <div className="flex items-center gap-2">
             <p className="text-sm text-text-primary font-medium">{lead.email}</p>
             <div className="flex gap-1">
               <button
                 onClick={() => copyToClipboard(lead.email)}
-                className="p-1 text-text-secondary hover:text-accent transition-base rounded"
+                className="p-1 text-text-secondary hover:text-accent transition-base rounded cursor-pointer"
                 aria-label="Copy email"
                 title="Copy email"
               >
@@ -34,7 +34,7 @@ export default function LeadInfo({ lead }) {
           </div>
         </div>
 
-        <div className="bg-background rounded-btn p-4">
+        <div className="bg-background border border-border rounded-btn p-4">
           <p className="text-xs text-text-secondary mb-1.5 font-medium uppercase tracking-wide">Phone / WhatsApp</p>
           {lead.phone ? (
             <div className="flex items-center gap-2">
@@ -58,26 +58,26 @@ export default function LeadInfo({ lead }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <p className="text-xs text-text-secondary mb-1 font-medium uppercase tracking-wide">Business Type</p>
-          <p className="text-sm text-text-primary">{lead.business_type || '—'}</p>
+          <p className="text-sm text-text-primary font-medium">{lead.business_type || '—'}</p>
         </div>
         <div>
           <p className="text-xs text-text-secondary mb-1 font-medium uppercase tracking-wide">Business Age</p>
-          <p className="text-sm text-text-primary">{lead.business_age || '—'}</p>
+          <p className="text-sm text-text-primary font-medium">{lead.business_age || '—'}</p>
         </div>
       </div>
 
       {/* Challenge */}
       <div>
         <p className="text-xs text-text-secondary mb-1.5 font-medium uppercase tracking-wide">Primary Operational Challenge</p>
-        <div className="bg-background rounded-btn p-4 border-l-2 border-accent">
-          <p className="text-sm text-text-primary leading-relaxed">"{lead.main_challenge}"</p>
+        <div className="bg-background border border-border border-l-2 border-l-accent rounded-btn p-4">
+          <p className="text-sm text-text-primary leading-relaxed">&ldquo;{lead.main_challenge}&rdquo;</p>
         </div>
       </div>
 
       {/* Goal */}
       <div>
         <p className="text-xs text-text-secondary mb-1.5 font-medium uppercase tracking-wide">Stated Strategic Objective</p>
-        <div className="flex items-start gap-2 bg-background rounded-btn p-4">
+        <div className="flex items-start gap-2.5 bg-background border border-border rounded-btn p-4">
           <span className="text-accent mt-0.5">🎯</span>
           <p className="text-sm text-text-primary">{lead.main_goal}</p>
         </div>
@@ -85,7 +85,7 @@ export default function LeadInfo({ lead }) {
 
       {/* Urgency */}
       {lead.urgency && (
-        <div className="flex items-center gap-3 bg-background rounded-btn p-4">
+        <div className="flex items-center gap-3 bg-background border border-border rounded-btn p-4">
           <span className="text-lg">⏱</span>
           <div>
             <p className="text-xs text-text-secondary font-medium uppercase tracking-wide mb-0.5">Desired Timeline / Urgency</p>

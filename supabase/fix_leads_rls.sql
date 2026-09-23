@@ -37,5 +37,3 @@ DROP POLICY IF EXISTS "allow_anon_read_leads" ON leads;
 DROP POLICY IF EXISTS "allow_anon_all_leads" ON leads;
 CREATE POLICY "allow_anon_all_leads" ON leads FOR ALL USING (true) WITH CHECK (true);
 
-
-meka run kara editor eke *****
