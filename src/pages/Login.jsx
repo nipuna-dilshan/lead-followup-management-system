@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock } from 'lucide-react';
 import LoginForm from '../features/auth/components/LoginForm';
 import { useAuth } from '../features/auth/hooks/useAuth';
 import { isSupabaseConfigured } from '../config/env';
@@ -38,10 +37,18 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
       <div className="bg-surface rounded-card border border-border shadow-card w-full max-w-md p-8 sm:p-10">
-        {/* Icon */}
+        {/* Brand Logo */}
         <div className="flex justify-center mb-6">
-          <div className="h-14 w-14 bg-accent-light border border-accent/20 rounded-card flex items-center justify-center">
-            <Lock className="h-6 w-6 text-accent" />
+          <div className="h-14 w-14 rounded-2xl bg-white border border-border shadow-sm flex items-center justify-center">
+            <svg
+              className="w-7 h-7 text-[#BD6B52]"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <rect x="4" y="8" width="4" height="12" rx="1.5" />
+              <rect x="11" y="4" width="4" height="16" rx="1.5" />
+              <rect x="18" y="11" width="4" height="9" rx="1.5" />
+            </svg>
           </div>
         </div>
 
