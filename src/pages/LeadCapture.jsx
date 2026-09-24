@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Shield, CheckCircle } from 'lucide-react';
 import Input from '../components/ui/Input';
-import Textarea from '../components/ui/Textarea';
 import Select from '../components/ui/Select';
 import Button from '../components/ui/Button';
 import { BUSINESS_TYPES, BUSINESS_AGES, URGENCY_OPTIONS } from '../features/leads/constants/leadOptions';

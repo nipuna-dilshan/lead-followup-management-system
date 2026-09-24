@@ -4,7 +4,7 @@ import {
   Users,
   Calendar,
   Settings,
-  Target,
+  Zap,
   LogOut,
 } from 'lucide-react';
 import { useAuth } from '../../features/auth/hooks/useAuth';
@@ -69,18 +69,21 @@ export default function Sidebar() {
 
       {/* Bottom Section */}
       <div className="mt-auto pt-4 space-y-3">
-        {/* Automation Card */}
-        <div className="bg-[#181A1D] border border-[#2A2D30] rounded-card p-4">
-          <div className="flex items-start gap-3">
-            <Target className="h-5 w-5 text-[#BD6B52] shrink-0 mt-0.5" />
-            <div>
-              <p className="text-xs font-semibold text-white leading-snug">
-                Automate. Follow up.<br />Grow.
-              </p>
-              <p className="text-[11px] text-[#9A9791] mt-1.5 leading-tight">
-                More conversations.<br />More clients.
-              </p>
+        {/* Automation Status Card */}
+        <div className="bg-[#181A1D] border border-[#2A2D30] rounded-card p-3.5 sm:p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Zap className="h-4 w-4 text-[#BD6B52] fill-[#BD6B52] shrink-0" />
+              <span className="text-xs font-semibold text-white tracking-tight">
+                Automation Active
+              </span>
             </div>
+            <span className="h-2 w-2 rounded-full bg-[#3E8F68] shadow-[0_0_6px_rgba(62,143,104,0.6)] shrink-0" />
+          </div>
+
+          <div className="mt-2 pl-6 text-[11px] text-[#9A9791] leading-relaxed">
+            <p>Form → Supabase → n8n →</p>
+            <p>Gmail + Cal.com</p>
           </div>
         </div>
 

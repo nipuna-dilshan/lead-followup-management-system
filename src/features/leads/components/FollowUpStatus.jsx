@@ -27,13 +27,13 @@ function statusColor(status) {
   return 'text-text-secondary';
 }
 
-export default function FollowUpStatus({ lead, followups, consultation }) {
+export default function FollowUpStatus({ lead, followups = [] }) {
   const isBooked = lead.status === 'BOOKED';
 
   // Map followup stage to status
   function getStageStatus(stageNum) {
     // Stage 1 = Welcome (stage 0 in followup = sent welcome)
-    const followup = followups.find((f) => f.stage === stageNum);
+    const followup = followups?.find((f) => f.stage === stageNum);
     if (followup) return followup.status;
     // If lead follow_up_stage covers it, mark sent
     if (lead.follow_up_stage >= stageNum) return 'SENT';
@@ -58,7 +58,7 @@ export default function FollowUpStatus({ lead, followups, consultation }) {
 
       {/* Stages */}
       <div className="space-y-2 mt-3">
-        {STAGES.map(({ stage, label, subLabel }) => {
+        {STAGES.map(({ stage, label }) => {
           const status = getStageStatus(stage - 1); // Adjust since followups are 0-indexed
           return (
             <div key={stage} className="flex items-start gap-3 py-2">

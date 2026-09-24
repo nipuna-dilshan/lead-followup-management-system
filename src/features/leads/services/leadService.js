@@ -43,6 +43,13 @@ export async function fetchLeads({ page = 1, pageSize = DEFAULT_PAGE_SIZE, searc
         meeting_url,
         status,
         created_at
+      ),
+      lead_followups (
+        id,
+        stage,
+        status,
+        scheduled_at,
+        sent_at
       )
     `, { count: 'exact' })
     .order('created_at', { ascending: false });

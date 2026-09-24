@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import Input from '../../../components/ui/Input';
 import Button from '../../../components/ui/Button';
-import { COACH_NAME, COACH_TITLE } from '../../../lib/constants';
+import { COACH_NAME } from '../../../lib/constants';
 
 export default function ProfileSettings({ profile, onSave, saving }) {
   const [values, setValues] = useState({

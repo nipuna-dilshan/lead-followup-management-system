@@ -42,14 +42,15 @@ export default function CalendarPage() {
     fetchRecentLeads(50)
       .then((leads) => {
         setLeadsList(leads || []);
-        if (leads && leads.length > 0 && !scheduleForm.lead_id) {
-          setScheduleForm((prev) => ({ ...prev, lead_id: leads[0].id }));
+        if (leads && leads.length > 0) {
+          setScheduleForm((prev) => (prev.lead_id ? prev : { ...prev, lead_id: leads[0].id }));
         }
       })
       .catch(() => {});
   }, []);
 
   const handleOpenScheduleForDate = (dateObj) => {
+    if (!dateObj) return;
     const year = dateObj.getFullYear();
     const month = String(dateObj.getMonth() + 1).padStart(2, '0');
     const day = String(dateObj.getDate()).padStart(2, '0');
@@ -283,12 +284,13 @@ export default function CalendarPage() {
                   return (
                     <div
                       key={index}
+                      onClick={() => !item.isOutside && handleOpenScheduleForDate(item.date)}
                       className={`min-h-[88px] sm:min-h-[96px] p-2 border-r border-b border-border transition-colors relative flex flex-col justify-between ${
                         item.isOutside
                           ? 'bg-hover/60 text-text-muted'
                           : item.isToday
-                          ? 'bg-accent-light/40'
-                          : 'bg-surface hover:bg-hover/70'
+                          ? 'bg-accent-light/40 cursor-pointer'
+                          : 'bg-surface hover:bg-hover/70 cursor-pointer'
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -313,7 +315,10 @@ export default function CalendarPage() {
                           {item.consultations.map((c) => (
                             <button
                               key={c.id}
-                              onClick={() => setSelectedConsultation(c)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedConsultation(c);
+                              }}
                               className="w-full text-left bg-success-light border border-success/20 text-success rounded-md p-1.5 text-[10px] leading-tight font-medium shadow-xs hover:bg-success-light/80 transition-colors cursor-pointer block"
                             >
                               <span className="font-bold block">

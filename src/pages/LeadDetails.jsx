@@ -13,7 +13,6 @@ import Modal from '../components/ui/Modal';
 import LeadInfo from '../features/leads/components/LeadInfo';
 import FollowUpStatus from '../features/leads/components/FollowUpStatus';
 import ActivityTimeline from '../features/leads/components/ActivityTimeline';
-import EmailHistory from '../features/leads/components/EmailHistory';
 import { fetchLeadById, updateLeadStatus } from '../features/leads/services/leadService';
 import { useToast } from '../components/ui/Toast';
 import { LEAD_STATUS, ALL_STATUSES, LEAD_STATUS_LABELS, CAL_BOOKING_URL } from '../lib/constants';
@@ -30,20 +29,23 @@ export default function LeadDetails() {
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
-  async function load() {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await fetchLeadById(id);
-      setData(result);
-    } catch (err) {
-      setError(err.message || 'Failed to load lead details.');
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    let isCurrent = true;
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await fetchLeadById(id);
+        if (isCurrent) setData(result);
+      } catch (err) {
+        if (isCurrent) setError(err.message || 'Failed to load lead details.');
+      } finally {
+        if (isCurrent) setLoading(false);
+      }
     }
-  }
-
-  useEffect(() => { load(); }, [id]);
+    load();
+    return () => { isCurrent = false; };
+  }, [id]);
 
   async function handleStatusUpdate(newStatus) {
     setUpdatingStatus(true);
@@ -137,94 +139,123 @@ export default function LeadDetails() {
       </div>
 
       {/* Main grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* Left column */}
-        <div className="space-y-6">
-          {/* Lead Information */}
-          <section className="bg-surface rounded-card border border-border shadow-card p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-sm font-semibold text-text-primary flex items-center gap-2">
-                📋 Lead Information
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+        {/* Left column: Client Dossier */}
+        <section className="bg-surface rounded-card border border-border shadow-card p-6 sm:p-7">
+          <div className="flex items-center justify-between pb-4 mb-5 border-b border-border">
+            <div>
+              <h2 className="text-sm font-bold text-text-primary tracking-tight">
+                Client Profile &amp; Enquiry
               </h2>
-              <span className="text-[11px] font-medium text-text-secondary bg-hover border border-border rounded-md px-2 py-0.5">
-                CONFIDENTIAL RECORD
-              </span>
+              <p className="text-xs text-text-secondary mt-0.5">
+                Full enquiry details submitted via web form
+              </p>
             </div>
-            <LeadInfo lead={lead} />
-          </section>
-        </div>
+            <span className="text-[11px] font-semibold text-text-secondary bg-hover border border-border rounded-md px-2.5 py-1">
+              Active Record
+            </span>
+          </div>
+          <LeadInfo lead={lead} />
+        </section>
 
-        {/* Right column */}
+        {/* Right column: Action & Timeline Hub */}
         <div className="space-y-6">
-          {/* Follow-up Status */}
-          <section className="bg-surface rounded-card border border-border shadow-card p-6">
-            <h2 className="text-sm font-semibold text-text-primary mb-5">🔁 Follow-up Sequence Status</h2>
-            <FollowUpStatus lead={lead} followups={followups} consultation={consultation} />
-          </section>
-
-          {/* Consultation Booking */}
-          <section className="bg-surface rounded-card border border-border shadow-card p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-text-primary">📅 Consultation Booking</h2>
-              {consultation && (
-                <Badge variant="success" label="Confirmed" />
-              )}
-            </div>
-
-            {consultation ? (
-              <div className="space-y-3">
-                <div className="bg-background rounded-btn p-4 border border-border">
-                  <p className="text-xs text-text-secondary font-medium uppercase tracking-wide mb-2">Upcoming Consultation Booked</p>
-                  <p className="text-sm font-semibold text-text-primary">
-                    {formatDate(consultation.start_time, 'EEEE, MMMM d · h:mm a')}
-                    {consultation.end_time && ` – ${formatTime(consultation.end_time)}`}
+          {/* Card 1: Primary Action (Consultation if booked, Follow-up sequence if not) */}
+          {isBooked ? (
+            <section className="bg-surface rounded-card border border-border shadow-card p-6 sm:p-7">
+              <div className="flex items-center justify-between pb-4 mb-5 border-b border-border">
+                <div>
+                  <h2 className="text-sm font-bold text-text-primary tracking-tight">
+                    Consultation Booking
+                  </h2>
+                  <p className="text-xs text-text-secondary mt-0.5">
+                    Confirmed consultation appointment with client
                   </p>
-                  {consultation.meeting_url && (
-                    <p className="text-xs text-text-secondary mt-1">📹 Meeting link attached to calendar invitation</p>
-                  )}
                 </div>
-                {consultation.meeting_url && (
+                <Badge variant="success" label="Confirmed" />
+              </div>
+
+              {consultation ? (
+                <div className="space-y-4">
+                  <div className="bg-background rounded-btn p-4 border border-border">
+                    <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1">
+                      Scheduled Session
+                    </p>
+                    <p className="text-base font-bold text-text-primary">
+                      {formatDate(consultation.start_time, 'EEEE, MMMM d, yyyy')}
+                    </p>
+                    <p className="text-sm font-medium text-text-secondary mt-0.5">
+                      {formatTime(consultation.start_time, 'h:mm a')}
+                      {consultation.end_time && ` – ${formatTime(consultation.end_time, 'h:mm a')}`}
+                    </p>
+                  </div>
+
+                  {consultation.meeting_url && (
+                    <a
+                      href={consultation.meeting_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 w-full h-[42px] px-4 text-sm font-semibold rounded-btn bg-accent hover:bg-[#A95C46] text-white transition-colors shadow-xs"
+                    >
+                      <span>Join Session Meeting Room</span>
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  )}
+
+                  <div className="flex items-center gap-2 text-xs text-success bg-success-light border border-success/20 rounded-btn px-3.5 py-2.5">
+                    <span className="font-semibold">Notice:</span>
+                    <span>Follow-up sequence paused — client booked consultation.</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <p className="text-sm text-text-secondary mb-4">
+                    Status is marked as Booked, but no calendar meeting record is linked yet.
+                  </p>
                   <a
-                    href={consultation.meeting_url}
+                    href={CAL_BOOKING_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline font-medium"
+                    className="inline-flex items-center gap-2 text-sm text-accent border border-accent/30 rounded-btn px-4 py-2 hover:bg-accent-light transition-base font-medium"
                   >
-                    Join Session Meeting Room
-                    <ExternalLink className="h-3.5 w-3.5" />
+                    <Calendar className="h-4 w-4" />
+                    Schedule via Cal.com
                   </a>
-                )}
-                <p className="text-xs text-success bg-success-light border border-success/20 rounded-btn px-3 py-2">
-                  Follow-ups paused — consultation confirmed.
+                </div>
+              )}
+            </section>
+          ) : (
+            <section className="bg-surface rounded-card border border-border shadow-card p-6 sm:p-7">
+              <div className="flex items-center justify-between pb-4 mb-5 border-b border-border">
+                <div>
+                  <h2 className="text-sm font-bold text-text-primary tracking-tight">
+                    Follow-up Sequence Status
+                  </h2>
+                  <p className="text-xs text-text-secondary mt-0.5">
+                    Automated email nurture cadence
+                  </p>
+                </div>
+                <Badge variant="success" label="Active Nurture" />
+              </div>
+
+              <FollowUpStatus lead={lead} followups={followups} consultation={consultation} />
+            </section>
+          )}
+
+          {/* Card 2: Unified Activity Feed */}
+          <section className="bg-surface rounded-card border border-border shadow-card p-6 sm:p-7">
+            <div className="flex items-center justify-between pb-4 mb-5 border-b border-border">
+              <div>
+                <h2 className="text-sm font-bold text-text-primary tracking-tight">
+                  Activity &amp; Engagement History
+                </h2>
+                <p className="text-xs text-text-secondary mt-0.5">
+                  Complete audit trail of touchpoints and interactions
                 </p>
               </div>
-            ) : (
-              <div className="text-center py-6">
-                <p className="text-sm text-text-secondary mb-4">No consultation booked yet.</p>
-                <a
-                  href={CAL_BOOKING_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm text-accent border border-accent/30 rounded-btn px-4 py-2 hover:bg-accent-light transition-base font-medium"
-                >
-                  <Calendar className="h-4 w-4" />
-                  Schedule via Cal.com
-                </a>
-              </div>
-            )}
-          </section>
-
-          {/* Email History */}
-          <section className="bg-surface rounded-card border border-border shadow-card p-6">
-            <h2 className="text-sm font-semibold text-text-primary mb-4">✉️ Email History</h2>
-            <EmailHistory emailEvents={emailEvents} lead={lead} />
-          </section>
-
-          {/* Activity Timeline */}
-          <section className="bg-surface rounded-card border border-border shadow-card p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-sm font-semibold text-text-primary">🕐 Activity Timeline</h2>
-              <span className="text-[11px] font-medium text-text-secondary">RECENT AUDIT</span>
+              <span className="text-[11px] font-semibold text-text-muted">
+                LIVE AUDIT
+              </span>
             </div>
             <ActivityTimeline
               lead={lead}
