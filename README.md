@@ -6,11 +6,11 @@ A modern, production-style Lead Management and Client Intake System built for bu
 
 ## 📸 Screenshots
 
-| Admin Dashboard | Pipeline Management |
+| Admin Dashboard | Lead Management |
 |:---:|:---:|
-| ![Dashboard](screenshots/dashboard.png) | ![Leads Pipeline](screenshots/leads.png) |
+| ![Dashboard](screenshots/dashboard.png) | ![Lead Management](screenshots/leads.png) |
 
-| Strategic Lead Dossier | Consultation Calendar |
+| Lead Details | Consultation Calendar |
 |:---:|:---:|
 | ![Lead Details](screenshots/lead-details.png) | ![Calendar](screenshots/calendar.png) |
 
@@ -22,10 +22,10 @@ A modern, production-style Lead Management and Client Intake System built for bu
 
 ## ⚡ Core Features
 
-- **Executive Intake Form (`/`)**: public enquiry capture with client qualification.
+- **Executive Intake Form (`/`)**: Public enquiry capture with client qualification.
 - **Admin Dashboard (`/admin`)**: Real-time KPI metrics, active pipeline stages, actionable enquiry queue, and priority notes.
-- **Lead Pipeline (`/admin/leads`)**: Client search, status filters (`New`, `Contacted`, `Booked`, `Archived`), and manual enquiry modal.
-- **Client Dossier (`/admin/leads/:id`)**: Comprehensive view of client goals, challenges, follow-up history, and meeting logs.
+- **Lead Management (`/admin/leads`)**: Client search, status filters (`New`, `Contacted`, `Booked`, `Archived`), and manual enquiry modal.
+- **Lead Details (`/admin/leads/:id`)**: Comprehensive view of client goals, challenges, follow-up history, and meeting logs.
 - **Consultation Calendar (`/admin/calendar`)**: Month/Week/Agenda consultation views with meeting room links (`Google Meet`) and brief summaries.
 - **Automated Workflows (n8n)**: Webhook-driven lead ingestion, email sequence triggers, and Cal.com booking sync.
 - **Bespoke Design Language**: Warm editorial palette (Terracotta `#8C432D`, Cream `#FAF7F2`, DM Sans typography).
