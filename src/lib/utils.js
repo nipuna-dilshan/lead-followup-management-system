@@ -124,8 +124,18 @@ export function getNextFollowUpInfo(lead) {
     };
   }
 
-  const stage = typeof lead.follow_up_stage === 'number' ? lead.follow_up_stage : 0;
   const createdAt = lead.created_at ? new Date(lead.created_at) : new Date();
+  const now = Date.now();
+  const daysElapsed = (now - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+
+  let stage = typeof lead.follow_up_stage === 'number' ? lead.follow_up_stage : (lead.followup_stage || 0);
+
+  // Automatically advance stage if scheduled cadence due date has elapsed
+  if (lead.status !== 'BOOKED' && lead.status !== 'NO_RESPONSE') {
+    if (daysElapsed >= 7) stage = Math.max(stage, 3);
+    else if (daysElapsed >= 4) stage = Math.max(stage, 2);
+    else if (daysElapsed >= 2) stage = Math.max(stage, 1);
+  }
 
   // 3. If all 3 stages completed or lead marked as NO_RESPONSE
   if (stage >= 3 || lead.status === 'NO_RESPONSE') {

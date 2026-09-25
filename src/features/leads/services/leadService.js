@@ -8,12 +8,58 @@ function requireSupabase() {
   }
 }
 
+export function calculateAutoStage(lead) {
+  if (!lead) return 0;
+  if (lead.status === 'BOOKED' || lead.status === 'NO_RESPONSE') {
+    return lead.follow_up_stage || lead.followup_stage || 0;
+  }
+
+  const createdAt = lead.created_at ? new Date(lead.created_at).getTime() : Date.now();
+  const now = Date.now();
+  const daysElapsed = (now - createdAt) / (1000 * 60 * 60 * 24);
+
+  let calculatedStage = lead.follow_up_stage ?? lead.followup_stage ?? 0;
+
+  // Cadence:
+  // - 2+ days elapsed -> Follow-up 1 has been dispatched (Stage 1)
+  // - 4+ days elapsed -> Follow-up 2 has been dispatched (Stage 2)
+  // - 7+ days elapsed -> Final Follow-up has been dispatched (Stage 3)
+  if (daysElapsed >= 7) {
+    calculatedStage = Math.max(calculatedStage, 3);
+  } else if (daysElapsed >= 4) {
+    calculatedStage = Math.max(calculatedStage, 2);
+  } else if (daysElapsed >= 2) {
+    calculatedStage = Math.max(calculatedStage, 1);
+  }
+
+  return calculatedStage;
+}
+
 function normalizeLead(lead) {
   if (!lead) return lead;
   const consultation =
     lead.consultations && lead.consultations.length > 0
       ? [...lead.consultations].sort((a, b) => new Date(b.created_at || b.start_time) - new Date(a.created_at || a.start_time))[0]
       : null;
+
+  const autoStage = calculateAutoStage(lead);
+  const effectiveFollowUpStage = Math.max(lead.follow_up_stage || 0, lead.followup_stage || 0, autoStage);
+
+  // Sync to database if stage advanced automatically
+  if (autoStage > (lead.follow_up_stage || 0) && supabase && lead.id) {
+    supabase
+      .from('leads')
+      .update({
+        follow_up_stage: effectiveFollowUpStage,
+        followup_stage: effectiveFollowUpStage,
+        status: lead.status === 'NEW' ? 'CONTACTED' : lead.status,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', lead.id)
+      .then(() => {})
+      .catch(() => {});
+  }
+
   return {
     ...lead,
     full_name: lead.full_name || lead.name || 'Unnamed Client',
@@ -22,6 +68,8 @@ function normalizeLead(lead) {
     challenge: lead.challenge || lead.main_challenge || '',
     main_goal: lead.main_goal || lead.goal || '',
     goal: lead.goal || lead.main_goal || '',
+    follow_up_stage: effectiveFollowUpStage,
+    followup_stage: effectiveFollowUpStage,
     consultation,
   };
 }
@@ -158,6 +206,63 @@ export async function updateLeadStatus(id, status) {
     .single();
 
   if (error) throw error;
+  return normalizeLead(data);
+}
+
+/**
+ * Update lead follow-up stage and log timeline events.
+ */
+export async function updateLeadFollowUpStage(id, stage) {
+  requireSupabase();
+
+  const now = new Date().toISOString();
+
+  // Update lead follow-up stage (both columns for compatibility)
+  const { data, error } = await supabase
+    .from('leads')
+    .update({
+      follow_up_stage: stage,
+      followup_stage: stage,
+      status: 'CONTACTED',
+      last_contacted_at: now,
+      updated_at: now,
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  // Log to email_events and lead_followups so audit timeline and checkmarks update
+  const stageNames = {
+    1: { type: 'FOLLOW_UP_1', title: 'Follow-up #1: Diagnostic Framework' },
+    2: { type: 'FOLLOW_UP_2', title: 'Follow-up #2: Client Case Study' },
+    3: { type: 'FINAL_FOLLOW_UP', title: 'Final Follow-up: Availability Close' },
+  };
+
+  const currentInfo = stageNames[stage];
+  if (currentInfo) {
+    try {
+      await Promise.allSettled([
+        supabase.from('email_events').insert([{
+          lead_id: id,
+          type: currentInfo.type,
+          subject: currentInfo.title,
+          status: 'SENT',
+          sent_at: now,
+        }]),
+        supabase.from('lead_followups').insert([{
+          lead_id: id,
+          stage: stage,
+          status: 'SENT',
+          sent_at: now,
+        }]),
+      ]);
+    } catch (e) {
+      console.warn('Logging follow-up event warning:', e);
+    }
+  }
+
   return normalizeLead(data);
 }
 

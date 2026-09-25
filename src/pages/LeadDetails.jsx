@@ -13,7 +13,7 @@ import Modal from '../components/ui/Modal';
 import LeadInfo from '../features/leads/components/LeadInfo';
 import FollowUpStatus from '../features/leads/components/FollowUpStatus';
 import ActivityTimeline from '../features/leads/components/ActivityTimeline';
-import { fetchLeadById, updateLeadStatus } from '../features/leads/services/leadService';
+import { fetchLeadById, updateLeadStatus, updateLeadFollowUpStage } from '../features/leads/services/leadService';
 import { useToast } from '../components/ui/Toast';
 import { LEAD_STATUS, ALL_STATUSES, LEAD_STATUS_LABELS, CAL_BOOKING_URL } from '../lib/constants';
 import { formatDate, formatTime, timeAgo, getInitials } from '../lib/utils';
@@ -28,6 +28,7 @@ export default function LeadDetails() {
   const [error, setError] = useState(null);
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [advancingStage, setAdvancingStage] = useState(false);
 
   useEffect(() => {
     let isCurrent = true;
@@ -58,6 +59,26 @@ export default function LeadDetails() {
       toast({ message: err.message || 'Unable to update status.', type: 'error' });
     } finally {
       setUpdatingStatus(false);
+    }
+  }
+
+  async function handleAdvanceStage(newStage) {
+    setAdvancingStage(true);
+    try {
+      await updateLeadFollowUpStage(id, newStage);
+      const refreshed = await fetchLeadById(id);
+      setData(refreshed);
+      setStatusModalOpen(false);
+      toast({
+        message: newStage >= 3
+          ? 'Final follow-up sent. Sequence completed!'
+          : `Follow-up #${newStage} marked as sent. Next stage scheduled!`,
+        type: 'success',
+      });
+    } catch (err) {
+      toast({ message: err.message || 'Unable to advance follow-up stage.', type: 'error' });
+    } finally {
+      setAdvancingStage(false);
     }
   }
 
@@ -238,7 +259,13 @@ export default function LeadDetails() {
                 <Badge variant="success" label="Active Nurture" />
               </div>
 
-              <FollowUpStatus lead={lead} followups={followups} consultation={consultation} />
+              <FollowUpStatus
+                lead={lead}
+                followups={followups}
+                consultation={consultation}
+                onAdvanceStage={handleAdvanceStage}
+                advancing={advancingStage}
+              />
             </section>
           )}
 
@@ -271,28 +298,78 @@ export default function LeadDetails() {
       <Modal
         isOpen={statusModalOpen}
         onClose={() => setStatusModalOpen(false)}
-        title="Update Lead Status"
-        description="Select the new status for this lead."
-        size="sm"
+        title="Update Lead & Follow-Up Status"
+        description="Select pipeline status or advance the nurture sequence stage."
+        size="md"
       >
-        <div className="space-y-2">
-          {ALL_STATUSES.map((s) => (
-            <button
-              key={s}
-              onClick={() => handleStatusUpdate(s)}
-              disabled={updatingStatus || s === lead.status}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-btn border text-sm font-medium transition-base cursor-pointer
-                ${s === lead.status
-                  ? 'bg-background border-border text-text-secondary cursor-default'
-                  : 'bg-surface border-border hover:border-accent hover:bg-accent-light hover:text-accent text-text-primary'
-                } disabled:opacity-50`}
-            >
-              <span>{LEAD_STATUS_LABELS[s]}</span>
-              {s === lead.status && (
-                <span className="text-xs text-text-secondary">Current</span>
-              )}
-            </button>
-          ))}
+        <div className="space-y-6">
+          {/* Pipeline Status */}
+          <div>
+            <p className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-2.5">
+              Pipeline Status
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {ALL_STATUSES.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => handleStatusUpdate(s)}
+                  disabled={updatingStatus || s === lead.status}
+                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-btn border text-sm font-medium transition-base cursor-pointer
+                    ${s === lead.status
+                      ? 'bg-background border-border text-text-secondary cursor-default font-semibold'
+                      : 'bg-surface border-border hover:border-accent hover:bg-accent-light hover:text-accent text-text-primary'
+                    } disabled:opacity-50`}
+                >
+                  <span>{LEAD_STATUS_LABELS[s]}</span>
+                  {s === lead.status && (
+                    <span className="text-[10px] bg-hover px-1.5 py-0.5 rounded text-text-secondary">Current</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Follow-up Sequence Stage */}
+          {!isBooked && (
+            <div>
+              <p className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-2.5">
+                Nurture Sequence Stage
+              </p>
+              <div className="space-y-2">
+                {[
+                  { stage: 0, label: 'Stage 0: Welcome Sent', desc: 'Follow-up 1 is due next' },
+                  { stage: 1, label: 'Stage 1: Follow-up 1 Sent', desc: 'Follow-up 2 is due next' },
+                  { stage: 2, label: 'Stage 2: Follow-up 2 Sent', desc: 'Final Follow-up is due next' },
+                  { stage: 3, label: 'Stage 3: Sequence Completed', desc: 'All 3 follow-ups sent' },
+                ].map(({ stage, label, desc }) => {
+                  const currentStage = lead.follow_up_stage || 0;
+                  const isCurrent = currentStage === stage;
+                  return (
+                    <button
+                      key={stage}
+                      type="button"
+                      onClick={() => handleAdvanceStage(stage)}
+                      disabled={advancingStage || isCurrent}
+                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-btn border text-left transition-base cursor-pointer
+                        ${isCurrent
+                          ? 'bg-background border-border text-text-secondary cursor-default'
+                          : 'bg-surface border-border hover:border-accent hover:bg-accent-light hover:text-accent'
+                        } disabled:opacity-50`}
+                    >
+                      <div>
+                        <p className={`text-sm font-medium ${isCurrent ? 'text-text-secondary' : 'text-text-primary'}`}>{label}</p>
+                        <p className="text-[11px] text-text-muted mt-0.5">{desc}</p>
+                      </div>
+                      {isCurrent && (
+                        <span className="text-[10px] bg-hover px-1.5 py-0.5 rounded text-text-secondary font-semibold">Active</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </Modal>
     </AdminLayout>

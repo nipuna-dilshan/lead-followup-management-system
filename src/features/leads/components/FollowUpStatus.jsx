@@ -27,7 +27,7 @@ function statusColor(status) {
   return 'text-text-secondary';
 }
 
-export default function FollowUpStatus({ lead, followups = [] }) {
+export default function FollowUpStatus({ lead, followups = [], onAdvanceStage, advancing = false }) {
   const isBooked = lead.status === 'BOOKED';
 
   // Map followup stage to status
@@ -41,6 +41,8 @@ export default function FollowUpStatus({ lead, followups = [] }) {
   }
 
   const completedStages = lead.follow_up_stage || 0;
+  // 4 milestones: Welcome (25%), Follow-up 1 (50%), Follow-up 2 (75%), Final Follow-up (100%)
+  const progressPercent = Math.min(((completedStages + 1) / 4) * 100, 100);
 
   return (
     <div className="space-y-4">
@@ -51,8 +53,8 @@ export default function FollowUpStatus({ lead, followups = [] }) {
       </div>
       <div className="w-full bg-border rounded-full h-1.5">
         <div
-          className="bg-accent h-1.5 rounded-full transition-all"
-          style={{ width: `${Math.min((completedStages / 3) * 100, 100)}%` }}
+          className="bg-accent h-1.5 rounded-full transition-all duration-300"
+          style={{ width: `${progressPercent}%` }}
         />
       </div>
 
@@ -75,6 +77,7 @@ export default function FollowUpStatus({ lead, followups = [] }) {
           );
         })}
       </div>
+
 
       {/* Booked notice */}
       {isBooked && (

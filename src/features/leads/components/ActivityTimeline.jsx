@@ -25,21 +25,63 @@ function buildTimeline(lead, emailEvents, followups, consultation) {
       color: 'text-success',
       bgColor: 'bg-success-light',
     });
+  } else if (lead.created_at) {
+    // Lead intake sends welcome email immediately upon submission
+    events.push({
+      id: 'welcome-email-auto',
+      icon: Mail,
+      label: 'Welcome email auto-responder sent',
+      timestamp: lead.created_at,
+      color: 'text-success',
+      bgColor: 'bg-success-light',
+    });
   }
 
-  // Follow-up emails
+  // Follow-up emails from emailEvents
   emailEvents?.forEach((e) => {
     if (e.type !== 'WELCOME' && e.status === 'SENT') {
       events.push({
         id: `email-${e.id}`,
         icon: Send,
-        label: `Follow-up email delivered`,
+        label: e.subject ? `${e.subject} sent` : 'Follow-up email delivered',
         timestamp: e.sent_at || e.created_at,
         color: 'text-accent',
         bgColor: 'bg-accent-light',
       });
     }
   });
+
+  // Fallback for follow-ups tracked directly on lead record
+  if (lead.follow_up_stage >= 1 && !emailEvents?.some((e) => e.type === 'FOLLOW_UP_1')) {
+    events.push({
+      id: 'lead-followup-1',
+      icon: Send,
+      label: 'Follow-up #1: Diagnostic Framework delivered',
+      timestamp: lead.last_contacted_at || lead.updated_at || lead.created_at,
+      color: 'text-accent',
+      bgColor: 'bg-accent-light',
+    });
+  }
+  if (lead.follow_up_stage >= 2 && !emailEvents?.some((e) => e.type === 'FOLLOW_UP_2')) {
+    events.push({
+      id: 'lead-followup-2',
+      icon: Send,
+      label: 'Follow-up #2: Client Case Study delivered',
+      timestamp: lead.last_contacted_at || lead.updated_at || lead.created_at,
+      color: 'text-accent',
+      bgColor: 'bg-accent-light',
+    });
+  }
+  if (lead.follow_up_stage >= 3 && !emailEvents?.some((e) => e.type === 'FINAL_FOLLOW_UP')) {
+    events.push({
+      id: 'lead-followup-3',
+      icon: Send,
+      label: 'Final Follow-up: Availability Close delivered',
+      timestamp: lead.last_contacted_at || lead.updated_at || lead.created_at,
+      color: 'text-accent',
+      bgColor: 'bg-accent-light',
+    });
+  }
 
   // Consultation booked
   if (consultation) {
