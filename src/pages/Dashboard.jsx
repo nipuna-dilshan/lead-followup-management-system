@@ -20,6 +20,7 @@ import { useSettings } from '../features/settings/hooks/useSettings';
 import { useToast } from '../components/ui/Toast';
 import { isSupabaseConfigured } from '../config/env';
 import { formatDate, formatTime, timeAgo, getInitials } from '../lib/utils';
+import { isDemoUser, maskLeadList } from '../lib/demoMasking';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -43,9 +44,10 @@ export default function Dashboard() {
   const formRef = useRef(null);
 
   // Coach First Name
-  const coachFirstName =
-    profile?.full_name?.split(' ')[0] ||
-    (user?.email?.includes('nipun') ? 'Nipuna' : 'Nipuna');
+  const isDemo = isDemoUser(user);
+  const coachFirstName = isDemo
+    ? 'Coach'
+    : (profile?.full_name?.split(' ')[0] || (user?.email?.includes('nipun') ? 'Nipuna' : 'Nipuna'));
 
   useEffect(() => {
     let isMounted = true;
@@ -63,9 +65,10 @@ export default function Dashboard() {
         ]);
 
         if (isMounted) {
+          const isDemo = isDemoUser(user);
           if (metricsData) setMetrics(metricsData);
           if (Array.isArray(leadsData) && leadsData.length > 0) {
-            setLeads(leadsData);
+            setLeads(isDemo ? maskLeadList(leadsData, true) : leadsData);
           } else {
             // Sample fallback matching exact CRM data
             setLeads([

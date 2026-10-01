@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import Input from '../../../components/ui/Input';
 import Button from '../../../components/ui/Button';
 import { env, isN8nConfigured, isSupabaseConfigured } from '../../../config/env';
-import { ExternalLink, AlertCircle, CheckCircle } from 'lucide-react';
+import { ExternalLink, AlertCircle, CheckCircle, Lock } from 'lucide-react';
+import { useAuth } from '../../../features/auth/hooks/useAuth';
+import { isDemoUser } from '../../../lib/demoMasking';
 
 function StatusIndicator({ configured, label }) {
   return (
@@ -18,6 +20,8 @@ function StatusIndicator({ configured, label }) {
 }
 
 export default function IntegrationSettings({ profile, onSave, saving }) {
+  const { user } = useAuth();
+  const isDemo = isDemoUser(user);
   const [bookingUrl, setBookingUrl] = useState(env.calBookingUrl);
 
   useEffect(() => {
@@ -26,6 +30,7 @@ export default function IntegrationSettings({ profile, onSave, saving }) {
 
   function handleSave(e) {
     e.preventDefault();
+    if (isDemo) return;
     onSave({ booking_url: bookingUrl });
   }
 
@@ -44,19 +49,29 @@ export default function IntegrationSettings({ profile, onSave, saving }) {
           <Input
             label="Booking Calendar URL"
             id="integration-booking-url"
-            value={bookingUrl}
+            value={isDemo ? 'https://cal.com/executive-advisory/strategy-session' : bookingUrl}
             onChange={(e) => setBookingUrl(e.target.value)}
-            hint="Your Cal.com booking link, used in welcome emails."
-            disabled={saving}
+            hint={isDemo ? 'Locked in demo mode to protect live booking integrations.' : 'Your Cal.com booking link, used in welcome emails.'}
+            disabled={isDemo || saving}
+            readOnly={isDemo}
           />
-          <a
-            href={bookingUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-1 inline-flex items-center gap-1 text-xs text-accent hover:underline"
-          >
-            Open booking page <ExternalLink className="h-3 w-3" />
-          </a>
+          <div className="mt-2 flex items-center justify-between">
+            {isDemo ? (
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded">
+                <Lock className="h-3.5 w-3.5" />
+                Integrations Locked in Demo Mode
+              </span>
+            ) : (
+              <a
+                href={bookingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-accent hover:underline ml-auto"
+              >
+                Open booking page <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+          </div>
         </div>
 
         <div className="p-4 bg-background rounded-btn border border-border">
@@ -71,9 +86,16 @@ export default function IntegrationSettings({ profile, onSave, saving }) {
           </p>
         </div>
 
-        <Button type="submit" loading={saving}>
-          Save Integration Settings
-        </Button>
+        {isDemo ? (
+          <Button type="button" disabled variant="secondary" className="opacity-50 cursor-not-allowed">
+            <Lock className="h-3.5 w-3.5 mr-1.5 inline" />
+            Save Disabled (Demo Mode)
+          </Button>
+        ) : (
+          <Button type="submit" loading={saving}>
+            Save Integration Settings
+          </Button>
+        )}
       </form>
     </div>
   );

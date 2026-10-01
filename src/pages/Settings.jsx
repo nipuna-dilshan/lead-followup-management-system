@@ -13,12 +13,16 @@ import {
 } from 'lucide-react';
 import { useSettings } from '../features/settings/hooks/useSettings';
 import { useToast } from '../components/ui/Toast';
+import { useAuth } from '../features/auth/hooks/useAuth';
+import { isDemoUser } from '../lib/demoMasking';
 import IntegrationSettings from '../features/settings/components/IntegrationSettings';
 import NotificationSettings from '../features/settings/components/NotificationSettings';
 import { getInitials } from '../lib/utils';
 
 export default function Settings() {
   const { profile, saving, uploading, saveProfile, uploadPhoto, removePhoto } = useSettings();
+  const { user } = useAuth();
+  const isDemo = isDemoUser(user);
   const toast = useToast();
   const fileInputRef = useRef(null);
 
@@ -31,7 +35,14 @@ export default function Settings() {
   });
 
   useEffect(() => {
-    if (profile) {
+    if (isDemo) {
+      setFormData((prev) => ({
+        ...prev,
+        fullName: 'Demo Advisory Lead',
+        email: user?.email || 'testuser@gmail.com',
+        phone: '+1 (555) 234-5678',
+      }));
+    } else if (profile) {
       setFormData((prev) => ({
         ...prev,
         fullName: profile.full_name || prev.fullName,
@@ -41,7 +52,7 @@ export default function Settings() {
         bio: profile.bio || prev.bio,
       }));
     }
-  }, [profile]);
+  }, [profile, isDemo, user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -76,6 +87,10 @@ export default function Settings() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isDemo) {
+      toast({ message: 'Profile updated (Demo preview mode).', type: 'success' });
+      return;
+    }
     try {
       await saveProfile({
         full_name: formData.fullName,

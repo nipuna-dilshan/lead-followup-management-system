@@ -17,11 +17,15 @@ import { fetchLeadById, updateLeadStatus, updateLeadFollowUpStage } from '../fea
 import { useToast } from '../components/ui/Toast';
 import { LEAD_STATUS, ALL_STATUSES, LEAD_STATUS_LABELS, CAL_BOOKING_URL } from '../lib/constants';
 import { formatDate, formatTime, timeAgo, getInitials } from '../lib/utils';
+import { useAuth } from '../features/auth/hooks/useAuth';
+import { isDemoUser, maskLead } from '../lib/demoMasking';
 
 export default function LeadDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
+  const { user } = useAuth();
+  const isDemo = isDemoUser(user);
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -37,7 +41,16 @@ export default function LeadDetails() {
       setError(null);
       try {
         const result = await fetchLeadById(id);
-        if (isCurrent) setData(result);
+        if (isCurrent) {
+          if (isDemo && result?.lead) {
+            setData({
+              ...result,
+              lead: maskLead(result.lead, true),
+            });
+          } else {
+            setData(result);
+          }
+        }
       } catch (err) {
         if (isCurrent) setError(err.message || 'Failed to load lead details.');
       } finally {
@@ -46,13 +59,14 @@ export default function LeadDetails() {
     }
     load();
     return () => { isCurrent = false; };
-  }, [id]);
+  }, [id, isDemo]);
 
   async function handleStatusUpdate(newStatus) {
     setUpdatingStatus(true);
     try {
       const updated = await updateLeadStatus(id, newStatus);
-      setData((prev) => ({ ...prev, lead: updated }));
+      const safeUpdated = isDemo ? maskLead(updated, true) : updated;
+      setData((prev) => ({ ...prev, lead: safeUpdated }));
       setStatusModalOpen(false);
       toast({ message: 'Lead status updated.', type: 'success' });
     } catch (err) {
@@ -67,7 +81,14 @@ export default function LeadDetails() {
     try {
       await updateLeadFollowUpStage(id, newStage);
       const refreshed = await fetchLeadById(id);
-      setData(refreshed);
+      if (isDemo && refreshed?.lead) {
+        setData({
+          ...refreshed,
+          lead: maskLead(refreshed.lead, true),
+        });
+      } else {
+        setData(refreshed);
+      }
       setStatusModalOpen(false);
       toast({
         message: newStage >= 3
@@ -142,7 +163,7 @@ export default function LeadDetails() {
         </div>
 
         <div className="flex gap-2.5 flex-wrap items-center">
-          {!isBooked && (
+          {!isBooked && !isDemo && (
             <a
               href={CAL_BOOKING_URL}
               target="_blank"
@@ -233,15 +254,17 @@ export default function LeadDetails() {
                   <p className="text-sm text-text-secondary mb-4">
                     Status is marked as Booked, but no calendar meeting record is linked yet.
                   </p>
-                  <a
-                    href={CAL_BOOKING_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-sm text-accent border border-accent/30 rounded-btn px-4 py-2 hover:bg-accent-light transition-base font-medium"
-                  >
-                    <Calendar className="h-4 w-4" />
-                    Schedule via Cal.com
-                  </a>
+                  {!isDemo && (
+                    <a
+                      href={CAL_BOOKING_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-sm text-accent border border-accent/30 rounded-btn px-4 py-2 hover:bg-accent-light transition-base font-medium"
+                    >
+                      <Calendar className="h-4 w-4" />
+                      Schedule via Cal.com
+                    </a>
+                  )}
                 </div>
               )}
             </section>

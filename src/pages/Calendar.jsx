@@ -18,10 +18,14 @@ import { fetchRecentLeads } from '../features/leads/services/leadService';
 import { useToast } from '../components/ui/Toast';
 import { CAL_BOOKING_URL } from '../lib/constants';
 import { formatDate } from '../lib/utils';
+import { useAuth } from '../features/auth/hooks/useAuth';
+import { isDemoUser, maskLeadList } from '../lib/demoMasking';
 
 export default function CalendarPage() {
   const navigate = useNavigate();
   const toast = useToast();
+  const { user } = useAuth();
+  const isDemo = isDemoUser(user);
   const { consultations, loading, scheduleConsultation } = useCalendar();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState('Month');
@@ -41,13 +45,14 @@ export default function CalendarPage() {
   useEffect(() => {
     fetchRecentLeads(50)
       .then((leads) => {
-        setLeadsList(leads || []);
-        if (leads && leads.length > 0) {
-          setScheduleForm((prev) => (prev.lead_id ? prev : { ...prev, lead_id: leads[0].id }));
+        const safeLeads = isDemo ? maskLeadList(leads || [], true) : (leads || []);
+        setLeadsList(safeLeads);
+        if (safeLeads && safeLeads.length > 0) {
+          setScheduleForm((prev) => (prev.lead_id ? prev : { ...prev, lead_id: safeLeads[0].id }));
         }
       })
       .catch(() => {});
-  }, []);
+  }, [isDemo]);
 
   const handleOpenScheduleForDate = (dateObj) => {
     if (!dateObj) return;
@@ -508,14 +513,18 @@ export default function CalendarPage() {
 
               <div className="pt-3 border-t border-border mt-2 flex items-center justify-between text-[11px]">
                 <span className="text-text-secondary">Calendar connection: Cal.com</span>
-                <a
-                  href={CAL_BOOKING_URL}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="font-semibold text-accent hover:underline cursor-pointer"
-                >
-                  Manage Availability
-                </a>
+                {isDemo ? (
+                  <span className="font-medium text-text-muted">Live Sync Active</span>
+                ) : (
+                  <a
+                    href={CAL_BOOKING_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-semibold text-accent hover:underline cursor-pointer"
+                  >
+                    Manage Availability
+                  </a>
+                )}
               </div>
             </div>
           </div>

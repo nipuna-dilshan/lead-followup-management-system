@@ -1,8 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchLeads } from '../services/leadService';
 import { DEFAULT_PAGE_SIZE } from '../../../lib/constants';
+import { useAuth } from '../../auth/hooks/useAuth';
+import { isDemoUser, maskLeadList } from '../../../lib/demoMasking';
 
 export function useLeads({ search = '', status = 'ALL', businessType = '' } = {}) {
+  const { user } = useAuth();
+  const isDemo = isDemoUser(user);
   const [leads, setLeads] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -14,14 +18,15 @@ export function useLeads({ search = '', status = 'ALL', businessType = '' } = {}
     setError(null);
     try {
       const result = await fetchLeads({ page: currentPage, pageSize: DEFAULT_PAGE_SIZE, search, status, businessType });
-      setLeads(result.leads);
+      const safeLeads = isDemo ? maskLeadList(result.leads, true) : result.leads;
+      setLeads(safeLeads);
       setTotal(result.total);
     } catch (err) {
       setError(err.message || 'Failed to load leads.');
     } finally {
       setLoading(false);
     }
-  }, [search, status, businessType]);
+  }, [search, status, businessType, isDemo]);
 
   useEffect(() => {
     setPage(1);

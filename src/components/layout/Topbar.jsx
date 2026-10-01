@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, Bell, ChevronDown, Menu } from 'lucide-react';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { useSettings } from '../../features/settings/hooks/useSettings';
+import { isDemoUser } from '../../lib/demoMasking';
 
 export default function Topbar({ onMenuClick }) {
   const navigate = useNavigate();
@@ -10,9 +11,12 @@ export default function Topbar({ onMenuClick }) {
   const { profile } = useSettings();
   const [searchQuery, setSearchQuery] = useState('');
 
-  const coachName = profile?.full_name || (user?.email?.includes('nipun') ? 'Nipuna Dilshan' : 'Nipuna Dilshan');
-  const coachRole = 'Admin';
-  const initials = 'ND';
+  const isDemo = isDemoUser(user);
+  const coachName = isDemo
+    ? 'Executive Coach'
+    : (profile?.full_name || (user?.email?.includes('nipun') ? 'Nipuna Dilshan' : 'Nipuna Dilshan'));
+  const coachRole = isDemo ? 'Admin (Demo)' : 'Admin';
+  const initials = isDemo ? 'EC' : 'ND';
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -93,7 +97,7 @@ export default function Topbar({ onMenuClick }) {
           onClick={() => navigate('/admin/settings')}
           className="flex items-center gap-2.5 pl-2 cursor-pointer group"
         >
-          {profile?.avatar_url ? (
+          {!isDemo && profile?.avatar_url ? (
             <img
               src={profile.avatar_url}
               alt={coachName}
