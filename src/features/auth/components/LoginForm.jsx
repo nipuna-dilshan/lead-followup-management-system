@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, EyeOff, Mail } from 'lucide-react';
+import { Eye, EyeOff, Mail, Sparkles } from 'lucide-react';
 import Input from '../../../components/ui/Input';
 import Button from '../../../components/ui/Button';
 import { validateLoginForm } from '../validation/authSchema';
@@ -91,6 +91,32 @@ export default function LoginForm({ onSubmit, loading, serverError }) {
       <Button type="submit" loading={loading} className="w-full" size="md">
         Sign In →
       </Button>
+
+      {/* 1-Click Demo Sandbox Fill */}
+      <div className="pt-2">
+        <div className="relative flex py-2 items-center">
+          <div className="flex-grow border-t border-border"></div>
+          <span className="flex-shrink mx-3 text-[11px] font-medium text-text-secondary uppercase tracking-wider">
+            Sandbox Access
+          </span>
+          <div className="flex-grow border-t border-border"></div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setValues({
+              email: 'testuser@gmail.com',
+              password: 'TestUser@123',
+            });
+            setErrors({});
+          }}
+          className="w-full py-2 px-3 text-xs font-semibold rounded-btn border border-[#BD6B52]/30 bg-[#BD6B52]/5 text-[#BD6B52] hover:bg-[#BD6B52]/10 transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+        >
+          <Sparkles className="h-3.5 w-3.5 text-[#BD6B52]" />
+          Fill Demo Account Credentials
+        </button>
+      </div>
     </form>
   );
 }
