@@ -27,7 +27,7 @@ function statusColor(status) {
   return 'text-text-secondary';
 }
 
-export default function FollowUpStatus({ lead, followups = [], onAdvanceStage, advancing = false }) {
+export default function FollowUpStatus({ lead, followups = [] }) {
   const isBooked = lead.status === 'BOOKED';
 
   // Map followup stage to status
