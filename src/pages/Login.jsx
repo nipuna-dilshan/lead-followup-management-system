@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import LoginForm from '../features/auth/components/LoginForm';
 import { useAuth } from '../features/auth/hooks/useAuth';
 import { isSupabaseConfigured } from '../config/env';
-import { APP_VERSION } from '../lib/constants';
 
 export default function Login() {
   const { signIn, isAuthenticated } = useAuth();
@@ -75,10 +74,6 @@ export default function Login() {
           serverError={serverError}
         />
       </div>
-
-      <p className="mt-8 text-xs text-text-secondary tracking-widest uppercase">
-        Authenticated Advisory Workspace · Ver. {APP_VERSION}
-      </p>
     </div>
   );
 }
