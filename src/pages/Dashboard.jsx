@@ -124,7 +124,7 @@ export default function Dashboard() {
 
     loadData();
     return () => { isMounted = false; };
-  }, []);
+  }, [user]);
 
   async function handleAddLead(values) {
     if (!isSupabaseConfigured) {
