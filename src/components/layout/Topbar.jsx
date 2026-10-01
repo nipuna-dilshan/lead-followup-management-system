@@ -15,7 +15,7 @@ export default function Topbar({ onMenuClick }) {
   const coachName = isDemo
     ? 'Executive Coach'
     : (profile?.full_name || (user?.email?.includes('nipun') ? 'Nipuna Dilshan' : 'Nipuna Dilshan'));
-  const coachRole = isDemo ? 'Admin (Demo)' : 'Admin';
+  const coachRole = 'Admin';
   const initials = isDemo ? 'EC' : 'ND';
 
   const handleSearch = (e) => {
