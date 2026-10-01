@@ -1,8 +1,12 @@
 import { Copy, ExternalLink, MessageCircle, Clock, Target } from 'lucide-react';
 import { useToast } from '../../../components/ui/Toast';
+import { useAuth } from '../../auth/hooks/useAuth';
+import { isDemoUser, maskLead } from '../../../lib/demoMasking';
 
 export default function LeadInfo({ lead }) {
   const toast = useToast();
+  const { user } = useAuth();
+  const displayLead = isDemoUser(user) ? maskLead(lead, true) : lead;
 
   function copyToClipboard(text) {
     navigator.clipboard?.writeText(text);
@@ -17,11 +21,11 @@ export default function LeadInfo({ lead }) {
         <div className="flex items-center justify-between p-3.5 bg-background border border-border rounded-btn">
           <div className="min-w-0 mr-2">
             <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wider">Email Address</p>
-            <p className="text-sm font-medium text-text-primary truncate mt-0.5">{lead.email}</p>
+            <p className="text-sm font-medium text-text-primary truncate mt-0.5">{displayLead.email}</p>
           </div>
           <div className="flex items-center gap-1 shrink-0">
             <button
-              onClick={() => copyToClipboard(lead.email)}
+              onClick={() => copyToClipboard(displayLead.email)}
               className="p-1.5 text-text-secondary hover:text-accent hover:bg-hover transition-colors rounded-md cursor-pointer"
               aria-label="Copy email"
               title="Copy email"
@@ -29,7 +33,7 @@ export default function LeadInfo({ lead }) {
               <Copy className="h-3.5 w-3.5" />
             </button>
             <a
-              href={`mailto:${lead.email}`}
+              href={`mailto:${displayLead.email}`}
               className="p-1.5 text-text-secondary hover:text-accent hover:bg-hover transition-colors rounded-md"
               aria-label="Send email"
               title="Send email"
@@ -44,12 +48,12 @@ export default function LeadInfo({ lead }) {
           <div className="min-w-0 mr-2">
             <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wider">Phone / WhatsApp</p>
             <p className="text-sm font-medium text-text-primary truncate mt-0.5">
-              {lead.phone || 'Not provided'}
+              {displayLead.phone || 'Not provided'}
             </p>
           </div>
-          {lead.phone && (
+          {displayLead.phone && (
             <a
-              href={`https://wa.me/${lead.phone.replace(/\D/g, '')}`}
+              href={`https://wa.me/${displayLead.phone.replace(/\D/g, '')}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-xs font-semibold bg-success-light text-success border border-success/20 px-2.5 py-1.5 rounded-btn hover:bg-success hover:text-white transition-colors shrink-0"

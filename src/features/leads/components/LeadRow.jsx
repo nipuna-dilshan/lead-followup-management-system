@@ -2,15 +2,19 @@ import { useNavigate } from 'react-router-dom';
 import { ExternalLink, Calendar, Clock, CheckCircle2 } from 'lucide-react';
 import Badge from '../../../components/ui/Badge';
 import { formatDate, getInitials, truncate, getNextFollowUpInfo } from '../../../lib/utils';
+import { useAuth } from '../../auth/hooks/useAuth';
+import { isDemoUser, maskLead } from '../../../lib/demoMasking';
 
 export default function LeadRow({ lead }) {
   const navigate = useNavigate();
-  const initials = getInitials(lead.full_name);
-  const followUpInfo = getNextFollowUpInfo(lead);
+  const { user } = useAuth();
+  const displayLead = isDemoUser(user) ? maskLead(lead, true) : lead;
+  const initials = getInitials(displayLead.full_name);
+  const followUpInfo = getNextFollowUpInfo(displayLead);
 
   return (
     <tr
-      onClick={() => navigate(`/admin/leads/${lead.id}`)}
+      onClick={() => navigate(`/admin/leads/${displayLead.id}`)}
       className="cursor-pointer hover:bg-hover transition-colors group"
     >
       {/* Lead Name & Contact */}
@@ -21,14 +25,14 @@ export default function LeadRow({ lead }) {
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors truncate">
-              {lead.full_name}
+              {displayLead.full_name}
             </p>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-xs text-text-secondary truncate">{lead.email}</span>
-              {lead.phone && (
+              <span className="text-xs text-text-secondary truncate">{displayLead.email}</span>
+              {displayLead.phone && (
                 <>
                   <span className="text-text-muted text-xs">•</span>
-                  <span className="text-xs text-text-secondary truncate">{lead.phone}</span>
+                  <span className="text-xs text-text-secondary truncate">{displayLead.phone}</span>
                 </>
               )}
             </div>
