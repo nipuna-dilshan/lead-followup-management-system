@@ -161,9 +161,17 @@ export default function Dashboard() {
         {/* Header: Overview + Good evening, Nipuna 👋 + Date Widget + New Lead */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold text-accent uppercase tracking-widest mb-1">
-              OVERVIEW
-            </p>
+            <div className="flex items-center gap-2.5 mb-1.5">
+              <p className="text-xs font-semibold text-accent uppercase tracking-widest">
+                OVERVIEW
+              </p>
+              {isDemo && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#BD6B52]/15 text-[#BD6B52] border border-[#BD6B52]/30 shadow-xs">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#BD6B52] animate-pulse" />
+                  Demo Mode
+                </span>
+              )}
+            </div>
             <h1 className="text-2xl sm:text-[32px] font-[650] text-text-primary tracking-tight leading-tight">
               Good evening, {coachFirstName} 👋
             </h1>

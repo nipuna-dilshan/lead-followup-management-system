@@ -28,7 +28,6 @@ export default function CalendarPage() {
   const isDemo = isDemoUser(user);
   const { consultations, loading, scheduleConsultation } = useCalendar();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [currentView, setCurrentView] = useState('Month');
   const [selectedConsultation, setSelectedConsultation] = useState(null);
 
   // Schedule Modal State
@@ -202,8 +201,8 @@ export default function CalendarPage() {
             </p>
           </div>
 
-          {/* Controls: Prev/Next Month + Today + View + Schedule */}
-          <div className="flex flex-wrap items-center gap-2.5">
+          {/* Controls: Prev/Next Month + Today + Schedule */}
+          <div className="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
             {/* Month Navigator */}
             <div className="flex items-center bg-surface border border-border rounded-btn px-2 py-1 shadow-xs">
               <button
@@ -232,23 +231,6 @@ export default function CalendarPage() {
             >
               Today
             </button>
-
-            {/* View switcher */}
-            <div className="flex items-center bg-hover p-0.5 rounded-btn text-xs font-medium border border-border">
-              {['Month', 'Week', 'Agenda'].map((view) => (
-                <button
-                  key={view}
-                  onClick={() => setCurrentView(view)}
-                  className={`px-3 py-1 rounded-[8px] transition-all cursor-pointer ${
-                    currentView === view
-                      ? 'bg-surface text-text-primary font-semibold shadow-xs'
-                      : 'text-text-secondary hover:text-text-primary'
-                  }`}
-                >
-                  {view}
-                </button>
-              ))}
-            </div>
 
             {/* Schedule Consultation Button */}
             <Button
