@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Shield, CheckCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Shield, CheckCircle, Lock } from 'lucide-react';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
 import Button from '../components/ui/Button';
@@ -102,18 +103,42 @@ export default function LeadCapture() {
           </div>
           <h1 className="text-2xl font-semibold text-text-primary mb-2">Request received</h1>
           <p className="text-text-secondary mb-1">Thanks, your enquiry has been received.</p>
-          <p className="text-text-secondary">Check your inbox for the next steps.</p>
         </div>
-        <p className="mt-8 text-xs text-text-secondary">
-          © {new Date().getFullYear()} Michael Carter Executive Advisory. All rights reserved.
-        </p>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <div className="flex-1 flex items-start justify-center py-12 px-4">
+      {/* Top Navigation Bar */}
+      <header className="w-full border-b border-border/80 bg-surface/70 backdrop-blur-md sticky top-0 z-20 px-4 sm:px-8 py-3.5 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="h-8 w-8 rounded-lg bg-[#BD6B52]/15 flex items-center justify-center shrink-0">
+            <svg
+              className="w-4 h-4 text-[#BD6B52]"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <rect x="4" y="8" width="4" height="12" rx="1.5" />
+              <rect x="11" y="4" width="4" height="16" rx="1.5" />
+              <rect x="18" y="11" width="4" height="9" rx="1.5" />
+            </svg>
+          </div>
+          <span className="text-sm font-bold text-text-primary tracking-tight">
+            LeadFollow <span className="text-xs font-normal text-text-secondary">CRM</span>
+          </span>
+        </div>
+
+        <Link
+          to="/login"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-btn text-xs font-semibold text-text-secondary hover:text-text-primary bg-surface hover:bg-border/40 border border-border transition-colors shadow-2xs cursor-pointer"
+        >
+          <Lock className="h-3.5 w-3.5 text-accent" />
+          Admin Login →
+        </Link>
+      </header>
+
+      <div className="flex-1 flex items-start justify-center py-10 px-4">
         <div className="bg-surface rounded-card border border-border shadow-card w-full max-w-2xl p-8 sm:p-10">
           {/* Header */}
           <div className="mb-8 pb-6 border-b border-border">
@@ -307,12 +332,6 @@ export default function LeadCapture() {
           </form>
         </div>
       </div>
-
-      <footer className="py-6 text-center">
-        <p className="text-xs text-text-secondary">
-          © {new Date().getFullYear()} Michael Carter Executive Advisory. All rights reserved.
-        </p>
-      </footer>
     </div>
   );
 }
