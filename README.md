@@ -45,7 +45,7 @@ To explore the live administrative workspace without modifying real production d
 |:---|:---|
 | **Login URL** | [`/login`](http://localhost:5173/login) |
 | **Email** | `testuser@gmail.com` |
-| **Password** | `TestUser@123` |
+| **Password** | `CoachAdvisory#99!` |
 | **Quick Access** | 1-Click **"Fill Demo Account Credentials"** button on login screen |
 | **Environment** | Automated Sandbox (Masked PII, Read-only integrations) |
 

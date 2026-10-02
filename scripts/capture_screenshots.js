@@ -27,7 +27,7 @@ async function capture() {
   // 2. Perform Login
   console.log('Logging in with testuser@gmail.com...');
   await page.type('input[type="email"]', 'testuser@gmail.com');
-  await page.type('input[type="password"]', 'TestUser@123');
+  await page.type('input[type="password"]', 'CoachAdvisory#99!');
   await Promise.all([
     page.click('button[type="submit"]'),
     page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 15000 }).catch(() => {}),
