@@ -1,4 +1,5 @@
 import { env, isN8nConfigured } from '../config/env';
+import { buildCalBookingUrl } from './cal';
 
 /**
  * Sends lead data to the n8n webhook.
@@ -8,6 +9,11 @@ export async function sendLeadToN8n(leadData) {
   if (!isN8nConfigured) {
     throw new Error('n8n webhook is not configured. Please set VITE_N8N_LEAD_WEBHOOK_URL.');
   }
+
+  const calBookingUrl = buildCalBookingUrl(env.calBookingUrl, {
+    email: leadData.email,
+    fullName: leadData.fullName,
+  });
 
   const response = await fetch(env.n8nLeadWebhookUrl, {
     method: 'POST',
@@ -30,12 +36,17 @@ export async function sendLeadToN8n(leadData) {
       source: 'public_form',
       submitted_at: new Date().toISOString(),
 
+      // Pre-bound Cal.com booking link (with email and name pre-filled)
+      booking_url: calBookingUrl,
+      cal_booking_url: calBookingUrl,
+
       // CamelCase aliases
       fullName: leadData.fullName,
       businessType: leadData.businessType,
       mainChallenge: leadData.mainChallenge,
       businessAge: leadData.businessAge || null,
       mainGoal: leadData.mainGoal,
+      calBookingUrl,
     }),
   });
 
