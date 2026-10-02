@@ -28,15 +28,15 @@ export async function fetchConsultations() {
     .order('start_time', { ascending: true });
 
   if (error) throw error;
-  return (data || []).map((c) => ({
-    ...c,
-    leads: c.leads
-      ? {
-          ...c.leads,
-          full_name: c.leads.full_name || c.leads.name || 'Client',
-        }
-      : null,
-  }));
+  return (data || [])
+    .filter((c) => c.lead_id && c.leads)
+    .map((c) => ({
+      ...c,
+      leads: {
+        ...c.leads,
+        full_name: c.leads.full_name || c.leads.name || 'Client',
+      },
+    }));
 }
 
 /**
@@ -57,15 +57,30 @@ export async function fetchUpcomingConsultations(limit = 5) {
     .limit(limit);
 
   if (error) throw error;
-  return (data || []).map((c) => ({
-    ...c,
-    leads: c.leads
-      ? {
-          ...c.leads,
-          full_name: c.leads.full_name || c.leads.name || 'Client',
-        }
-      : null,
-  }));
+  return (data || [])
+    .filter((c) => c.lead_id && c.leads)
+    .map((c) => ({
+      ...c,
+      leads: {
+        ...c.leads,
+        full_name: c.leads.full_name || c.leads.name || 'Client',
+      },
+    }));
+}
+
+/**
+ * Delete a consultation by ID.
+ */
+export async function deleteConsultation(id) {
+  requireSupabase();
+
+  const { error } = await supabase
+    .from('consultations')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+  return true;
 }
 
 /**

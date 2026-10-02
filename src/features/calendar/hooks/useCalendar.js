@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
-import { fetchConsultations, fetchUpcomingConsultations, createConsultation } from '../services/calendarService';
+import {
+  fetchConsultations,
+  fetchUpcomingConsultations,
+  createConsultation,
+  deleteConsultation,
+} from '../services/calendarService';
 import { isSupabaseConfigured } from '../../../config/env';
 
 export function useCalendar() {
@@ -30,9 +35,14 @@ export function useCalendar() {
     return created;
   }
 
+  async function removeConsultation(id) {
+    await deleteConsultation(id);
+    setConsultations((prev) => prev.filter((c) => c.id !== id));
+  }
+
   useEffect(() => { load(); }, []);
 
-  return { consultations, loading, error, refresh: load, scheduleConsultation };
+  return { consultations, loading, error, refresh: load, scheduleConsultation, removeConsultation };
 }
 
 export function useUpcomingConsultations(limit = 5) {

@@ -26,7 +26,7 @@ export default function CalendarPage() {
   const toast = useToast();
   const { user } = useAuth();
   const isDemo = isDemoUser(user);
-  const { consultations, loading, scheduleConsultation } = useCalendar();
+  const { consultations, loading, scheduleConsultation, removeConsultation } = useCalendar();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedConsultation, setSelectedConsultation] = useState(null);
 
@@ -85,6 +85,20 @@ export default function CalendarPage() {
       toast({ message: err.message || 'Failed to schedule consultation.', type: 'error' });
     } finally {
       setScheduleLoading(false);
+    }
+  };
+
+  const handleRemoveConsultation = async (id) => {
+    if (!id) return;
+    if (!window.confirm('Are you sure you want to remove this consultation from the calendar?')) return;
+    try {
+      await removeConsultation(id);
+      if (selectedConsultation?.id === id) {
+        setSelectedConsultation(null);
+      }
+      toast({ message: 'Consultation removed successfully.', type: 'success' });
+    } catch (err) {
+      toast({ message: err.message || 'Failed to remove consultation.', type: 'error' });
     }
   };
 
@@ -179,13 +193,23 @@ export default function CalendarPage() {
     return grid;
   }, [currentDate, consultations]);
 
-  // Active brief consultation
-  const activeBrief = selectedConsultation || (consultations.length > 0 ? consultations[0] : null);
+  // Active brief consultation: prefer selected, then upcoming sessions, then first available
+  const upcomingConsultations = useMemo(() => {
+    const now = new Date();
+    return consultations.filter((c) => new Date(c.start_time) >= now);
+  }, [consultations]);
+
+  const activeBrief = useMemo(() => {
+    if (selectedConsultation && consultations.some((c) => c.id === selectedConsultation.id)) {
+      return selectedConsultation;
+    }
+    return upcomingConsultations.length > 0 ? upcomingConsultations[0] : (consultations[0] || null);
+  }, [selectedConsultation, upcomingConsultations, consultations]);
 
   // This week's sessions
   const thisWeekConsultations = useMemo(() => {
-    return consultations.slice(0, 5);
-  }, [consultations]);
+    return upcomingConsultations.length > 0 ? upcomingConsultations.slice(0, 5) : consultations.slice(0, 5);
+  }, [upcomingConsultations, consultations]);
 
   return (
     <AdminLayout>
@@ -431,16 +455,26 @@ export default function CalendarPage() {
                     </div>
                   </div>
 
-                  {/* View Details Link */}
-                  {activeBrief.lead_id && (
+                  {/* View Details Link & Remove Action */}
+                  <div className="flex items-center justify-between pt-1">
+                    {activeBrief.lead_id ? (
+                      <button
+                        onClick={() => navigate(`/admin/leads/${activeBrief.lead_id}`)}
+                        className="text-xs font-semibold text-accent hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>View Lead Details</span>
+                        <ArrowRight className="h-3 w-3" />
+                      </button>
+                    ) : (
+                      <span />
+                    )}
                     <button
-                      onClick={() => navigate(`/admin/leads/${activeBrief.lead_id}`)}
-                      className="text-xs font-semibold text-accent hover:underline flex items-center gap-1 cursor-pointer pt-1"
+                      onClick={() => handleRemoveConsultation(activeBrief.id)}
+                      className="text-[11px] text-text-muted hover:text-danger hover:underline transition-colors cursor-pointer"
                     >
-                      <span>View Lead Details</span>
-                      <ArrowRight className="h-3 w-3" />
+                      Remove Session
                     </button>
-                  )}
+                  </div>
                 </div>
               ) : (
                 <div className="py-10 text-center space-y-2">
@@ -480,7 +514,11 @@ export default function CalendarPage() {
                         <span className="text-xs font-semibold text-text-primary">
                           {c.leads?.full_name || 'Client Session'}
                         </span>
-                        <button className="text-text-muted hover:text-text-primary">
+                        <button
+                          onClick={() => handleRemoveConsultation(c.id)}
+                          title="Remove Consultation"
+                          className="text-text-muted hover:text-danger p-1 rounded transition-colors cursor-pointer"
+                        >
                           <MoreVertical className="h-3.5 w-3.5" />
                         </button>
                       </div>
