@@ -19,7 +19,7 @@ import { useAuth } from '../features/auth/hooks/useAuth';
 import { useSettings } from '../features/settings/hooks/useSettings';
 import { useToast } from '../components/ui/Toast';
 import { isSupabaseConfigured } from '../config/env';
-import { formatDate, formatTime, timeAgo, getInitials } from '../lib/utils';
+import { formatDate, formatTime, timeAgo, getInitials, getGreeting } from '../lib/utils';
 import { isDemoUser, maskLeadList } from '../lib/demoMasking';
 
 export default function Dashboard() {
@@ -168,12 +168,12 @@ export default function Dashboard() {
               {isDemo && (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#BD6B52]/15 text-[#BD6B52] border border-[#BD6B52]/30 shadow-xs">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#BD6B52] animate-pulse" />
-                  Demo Mode
+                  Demo View
                 </span>
               )}
             </div>
             <h1 className="text-2xl sm:text-[32px] font-[650] text-text-primary tracking-tight leading-tight">
-              Good evening, {coachFirstName} 👋
+              {getGreeting()}, {coachFirstName} 👋
             </h1>
             <p className="text-sm text-text-secondary mt-1 font-normal">
               Here&apos;s what&apos;s happening with your business coaching leads and consultations today.

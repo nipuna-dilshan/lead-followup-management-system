@@ -5,14 +5,20 @@
  * and email binding operate normally with real lead data.
  */
 
-export const DEMO_EMAILS = [];
+export const DEMO_EMAILS = [
+  'testuser@gmail.com',
+];
 
 /**
- * Checks if the given user or session is a demo user.
- * @returns {boolean} Always false to ensure real data is displayed and synced.
+ * Checks if the given user or session is a demo evaluator user.
+ * Enables the demo badge in the UI while keeping live data unmasked.
+ * @param {object|null} user - The authenticated Supabase user object
+ * @returns {boolean}
  */
-export function isDemoUser() {
-  return false;
+export function isDemoUser(user) {
+  if (!user || !user.email) return false;
+  const normalized = user.email.trim().toLowerCase();
+  return DEMO_EMAILS.includes(normalized);
 }
 
 export function getMaskedContact(lead) {
