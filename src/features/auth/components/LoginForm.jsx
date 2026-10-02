@@ -107,7 +107,7 @@ export default function LoginForm({ onSubmit, loading, serverError }) {
           onClick={() => {
             setValues({
               email: 'testuser@gmail.com',
-              password: 'TestUser@123',
+              password: 'CoachAdvisory#99!',
             });
             setErrors({});
           }}
