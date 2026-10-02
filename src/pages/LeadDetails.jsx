@@ -16,6 +16,7 @@ import ActivityTimeline from '../features/leads/components/ActivityTimeline';
 import { fetchLeadById, updateLeadStatus, updateLeadFollowUpStage } from '../features/leads/services/leadService';
 import { useToast } from '../components/ui/Toast';
 import { LEAD_STATUS, ALL_STATUSES, LEAD_STATUS_LABELS, CAL_BOOKING_URL } from '../lib/constants';
+import { buildCalBookingUrl } from '../lib/cal';
 import { formatDate, formatTime, timeAgo, getInitials } from '../lib/utils';
 import { useAuth } from '../features/auth/hooks/useAuth';
 import { isDemoUser, maskLead } from '../lib/demoMasking';
@@ -130,6 +131,7 @@ export default function LeadDetails() {
   const { lead, followups, emailEvents, consultation } = data;
   const initials = getInitials(lead.full_name);
   const isBooked = lead.status === LEAD_STATUS.BOOKED;
+  const leadBookingUrl = buildCalBookingUrl(CAL_BOOKING_URL, lead);
 
   return (
     <AdminLayout>
@@ -163,9 +165,9 @@ export default function LeadDetails() {
         </div>
 
         <div className="flex gap-2.5 flex-wrap items-center">
-          {!isBooked && !isDemo && (
+          {!isBooked && (
             <a
-              href={CAL_BOOKING_URL}
+              href={leadBookingUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 h-[42px] px-4 text-sm font-semibold border border-border rounded-btn bg-surface text-text-primary hover:bg-hover transition-base shadow-xs"
@@ -254,17 +256,15 @@ export default function LeadDetails() {
                   <p className="text-sm text-text-secondary mb-4">
                     Status is marked as Booked, but no calendar meeting record is linked yet.
                   </p>
-                  {!isDemo && (
-                    <a
-                      href={CAL_BOOKING_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-sm text-accent border border-accent/30 rounded-btn px-4 py-2 hover:bg-accent-light transition-base font-medium"
-                    >
-                      <Calendar className="h-4 w-4" />
-                      Schedule via Cal.com
-                    </a>
-                  )}
+                  <a
+                    href={leadBookingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm text-accent border border-accent/30 rounded-btn px-4 py-2 hover:bg-accent-light transition-base font-medium"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Schedule via Cal.com
+                  </a>
                 </div>
               )}
             </section>
