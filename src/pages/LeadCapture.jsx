@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, CheckCircle, Lock, Calendar, ExternalLink } from 'lucide-react';
+import { Shield, CheckCircle, Lock } from 'lucide-react';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
 import Button from '../components/ui/Button';
@@ -8,8 +8,7 @@ import { BUSINESS_TYPES, BUSINESS_AGES, URGENCY_OPTIONS } from '../features/lead
 import { validatePublicLeadForm } from '../features/leads/validation/leadSchema';
 import { sendLeadToN8n } from '../lib/n8n';
 import { createLead } from '../features/leads/services/leadService';
-import { isN8nConfigured, isSupabaseConfigured, env } from '../config/env';
-import { buildCalBookingUrl } from '../lib/cal';
+import { isN8nConfigured, isSupabaseConfigured } from '../config/env';
 
 const initialValues = {
   fullName: '',
@@ -94,42 +93,16 @@ export default function LeadCapture() {
   }
 
   if (status === 'success') {
-    const bookingUrl = buildCalBookingUrl(env.calBookingUrl, values);
-
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-        <div className="bg-surface rounded-card border border-border shadow-card w-full max-w-md p-8 sm:p-10 text-center">
+        <div className="bg-surface rounded-card border border-border shadow-card w-full max-w-md p-10 text-center">
           <div className="flex justify-center mb-5">
             <div className="h-16 w-16 bg-success-light rounded-full flex items-center justify-center">
               <CheckCircle className="h-8 w-8 text-success" />
             </div>
           </div>
           <h1 className="text-2xl font-semibold text-text-primary mb-2">Request received</h1>
-          <p className="text-text-secondary text-sm mb-6">
-            Thanks! Your enquiry has been received. A confirmation has been sent to{' '}
-            <span className="font-semibold text-text-primary">{values.email}</span>.
-          </p>
-
-          {bookingUrl && (
-            <div className="pt-4 border-t border-border space-y-3">
-              <p className="text-xs text-text-secondary font-medium">
-                Fast-track your consultation by reserving your strategy session now:
-              </p>
-              <a
-                href={bookingUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 w-full h-[44px] px-4 text-sm font-semibold rounded-btn bg-accent hover:bg-[#A95C46] text-white transition-colors shadow-xs"
-              >
-                <Calendar className="h-4 w-4" />
-                <span>Schedule Consultation Now</span>
-                <ExternalLink className="h-3.5 w-3.5 opacity-80" />
-              </a>
-              <p className="text-[11px] text-text-muted">
-                Your email ({values.email}) is automatically linked to this booking.
-              </p>
-            </div>
-          )}
+          <p className="text-text-secondary mb-1">Thanks, your enquiry has been received.</p>
         </div>
       </div>
     );
