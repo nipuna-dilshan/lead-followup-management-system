@@ -165,7 +165,7 @@ export default function LeadDetails() {
         </div>
 
         <div className="flex gap-2.5 flex-wrap items-center">
-          {!isBooked && !isDemo && (
+          {!isBooked && (
             <a
               href={leadBookingUrl}
               target="_blank"
@@ -256,17 +256,15 @@ export default function LeadDetails() {
                   <p className="text-sm text-text-secondary mb-4">
                     Status is marked as Booked, but no calendar meeting record is linked yet.
                   </p>
-                  {!isDemo && (
-                    <a
-                      href={leadBookingUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-sm text-accent border border-accent/30 rounded-btn px-4 py-2 hover:bg-accent-light transition-base font-medium"
-                    >
-                      <Calendar className="h-4 w-4" />
-                      Schedule via Cal.com
-                    </a>
-                  )}
+                  <a
+                    href={leadBookingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm text-accent border border-accent/30 rounded-btn px-4 py-2 hover:bg-accent-light transition-base font-medium"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Schedule via Cal.com
+                  </a>
                 </div>
               )}
             </section>
